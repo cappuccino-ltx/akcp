@@ -16,7 +16,7 @@ connection::connection(uint32_t conv, const udp::endpoint& peer)
 uint32_t connection::get_conv() {
     return context_.get_conv();
 }
-uint32_t connection::is_alive(uint32_t clock){
+uint32_t connection::is_alive(uint64_t clock){
     return clock - context_.get_last_time() < connection_timeout;
 }
 
@@ -55,11 +55,10 @@ void connection::keepalive(){
     send(KCP_KEEPALIVE_REQUEST,KCP_PACKAGE_SIZE);
 }
 void connection::disconnect(){
-    std::cout << "disconnect" << std::endl;
     send(KCP_DISCONNECT_REQUEST,KCP_PACKAGE_SIZE);
 }
-void connection::set_timeout(uint32_t time){
-    connection_timeout = time;
+void connection::set_timeout(uint32_t milliseconds){
+    connection_timeout = milliseconds;
 }
 
 void connection::receive_callback(void* self, packet pack){
@@ -74,6 +73,9 @@ void connection::receive_callback(void* self, packet pack){
             return ;
         }else if (strcmp((char*)pack->data(), KCP_DISCONNECT_RESPONSE) == 0){
             // this is package response , discard
+            if (self_->connect_callback_){
+                self_->connect_callback_(self_->connect_ctx_, false);
+            }
             return ;
         }else if(strcmp((char*)pack->data(), KCP_KEEPALIVE_REQUEST) == 0){
             // this is request , respond 

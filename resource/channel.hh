@@ -1,7 +1,6 @@
 #pragma once 
 
 #include "connection.hh"
-#include "lfree.hh"
 #include <memory>
 
 namespace kcp{
@@ -27,7 +26,7 @@ private:
     void set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx);
     void set_connect_callback(const std::function<void(channel_view,bool)> & callback);
     void set_message_callback(const std::function<void(channel_view,packet)> & callback);
-    void set_remove_cahnnel_callback(const std::function<void(uint32_t)> & callback);
+    void set_remove_cahnnel_callback(void(*callback)(void*,uint32_t),void* ctx);
 
     static void message_callback(void* self,packet pack);
     // connect layer call ,need to delete
@@ -44,8 +43,9 @@ private:
     connection conn_;
     std::function<void(channel_view,bool)> connect_callback_;
     std::function<void(channel_view,packet)> message_callback_;
-    std::function<void(uint32_t)> remove_channel_callback_;
-    lfree::ring_queue<packet> send_queue_;
+    // std::function<void(uint32_t)> remove_channel_callback_;
+    void* remove_channel_ctx_ { nullptr };
+    void(*remove_channel_callback_)(void*,uint32_t) { nullptr };
     std::atomic_bool send_scheduled { false };// write_scheduled
 }; // class channel
 

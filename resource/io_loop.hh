@@ -1,22 +1,20 @@
 #pragma once
 
 #include <common.hh>
-#include <string>
 #include "io_socket.hh"
 
 namespace kcp{
 
 class io_loop{
-    friend class server;
+    friend class kcp_thread;
     friend class client;
 public:
     explicit io_loop(const std::shared_ptr<asio::io_context>& io_, std::atomic_bool& stop,int port);
     explicit io_loop(const std::shared_ptr<asio::io_context>& io_, std::atomic_bool& stop);
-    void enable_reader();
     void start();
     void set_receive_callback(void(* callback)(void*,const udp::endpoint&,const char*,size_t), void* ctx);
     void send_message_internal(const udp::endpoint& remote_endpoint,void* data, size_t size);
-    void connect(const std::string& host, int port);
+    
 
 private:
     std::shared_ptr<asio::io_context> context_;

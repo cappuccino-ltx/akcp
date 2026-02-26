@@ -2,21 +2,52 @@
 #include "io_socket.hh"
 #include <atomic>
 
+#if defined(__linux__)
+#include <sys/socket.h>
+#elif defined(_WIN32) || defined(_WIN64)
+
+#elif defined(__APPLE__) || defined(__MACH__)
+
+#endif
+
 namespace kcp{
 
-io_socket::io_socket(asio::io_context& context, std::atomic_bool& stop, int port)
-    :socket_(context,udp::endpoint(udp::v4(),port))
+io_socket::io_socket(const std::shared_ptr<asio::io_context>& ctx, std::atomic_bool& stop, int port)
+    :socket_(*ctx,udp::v4())
     ,buffer_(RECEIVE_BUFFER_SIZE)
     ,stop_(stop)
-{}
-io_socket::io_socket(asio::io_context& context, std::atomic_bool& stop)
-    :socket_(context,udp::v4()),buffer_(RECEIVE_BUFFER_SIZE)
+{
+    // set port reuse
+    socket_.set_option(asio::socket_base::reuse_address(true));
+#if defined(__linux__)
+    int reuseport = 1;
+    setsockopt(socket_.native_handle(), SOL_SOCKET, SO_REUSEPORT, &reuseport, sizeof(reuseport));
+#else
+    socket_.set_option(asio::socket_base::reuse_address(true));
+#endif
+    boost::asio::socket_base::receive_buffer_size receive_option(SERVER_SOCKET_RECEIVE_BUFFER_SIZE);
+    socket_.set_option(receive_option);
+
+    boost::asio::socket_base::send_buffer_size send_option(SERVER_SOCKET_SEND_BUFFER_SIZE);
+    socket_.set_option(send_option);
+    // bind
+    asio::ip::udp::endpoint endpoint(asio::ip::udp::v4(), port);
+    socket_.bind(endpoint);
+}
+io_socket::io_socket(const std::shared_ptr<asio::io_context>& ctx, std::atomic_bool& stop)
+    :socket_(*ctx,udp::v4()),buffer_(RECEIVE_BUFFER_SIZE)
     ,stop_(stop)
 {}
 void io_socket::async_receive(){
     if (stop_.load(std::memory_order_acquire)){
         return;
     }
+    boost::asio::socket_base::receive_buffer_size receive_option(CLIENT_SOCKET_RECEIVE_BUFFER_SIZE);
+    socket_.set_option(receive_option);
+
+    boost::asio::socket_base::send_buffer_size send_option(CLIENT_SOCKET_SEND_BUFFER_SIZE);
+    socket_.set_option(send_option);
+
     socket_.async_receive_from(
         asio::buffer(buffer_.data(),buffer_.size()),
         remote_endpoint_,

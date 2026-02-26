@@ -8,8 +8,8 @@ namespace kcp{
 
 class io_socket{
 public:
-    explicit io_socket(asio::io_context& context, std::atomic_bool& stop, int port);
-    io_socket(asio::io_context& context, std::atomic_bool& stop);
+    explicit io_socket(const std::shared_ptr<asio::io_context>& ctx, std::atomic_bool& stop, int port);
+    explicit io_socket(const std::shared_ptr<asio::io_context>& ctx, std::atomic_bool& stop);
     void async_receive();
     void receive();
     void async_send_packet(const udp::endpoint& remote_endpoint,const packet& message);

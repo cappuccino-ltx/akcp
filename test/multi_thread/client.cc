@@ -5,6 +5,7 @@
 #include <client.hh>
 #include <iostream>
 #include <thread>
+#include <unistd.h>
 
 kcp::channel_view channel_global;
 
@@ -27,17 +28,19 @@ int main() {
     kcp::client client;
     client.set_connect_callback(on_connect);
     client.set_message_callback(on_message);
-    client.start();
     client.connect("127.0.0.1", 8080);
-    int count = 10;
+    while(1){
+        if (channel_global) {
+            break;
+        }
+        // sleep(1);
+    }
+    int count = 3;
     std::string message = "hello!!!!";
     while(count -- ){
-        if(channel_global){
-            channel_global->send(message.data(),message.size());
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        channel_global->send(message.data(),message.size());
     }
     channel_global->disconnect();
-    // client.stop();
+    client.stop();
     return 0;
 }

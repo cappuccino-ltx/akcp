@@ -1,7 +1,11 @@
 #include "context.hh"
+#include "common.hh"
+#include "ikcp.h"
+#include <atomic>
+#include <cstdint>
 namespace kcp{
 
-uint32_t context::conv_global = KCP_CONV_MIN;
+std::atomic_uint32_t context::conv_global = KCP_CONV_MIN;
 
 context::context(unsigned int conv, const udp::endpoint& peer)
     :peer_(peer),
@@ -10,6 +14,7 @@ context::context(unsigned int conv, const udp::endpoint& peer)
 {
     kcp_ = ikcp_create(conv_, this);
     kcp_->output = context::send_callback;
+    ikcp_nodelay(kcp_, KCP_NODELAY, KCP_INTERVAL, KCP_RESEND, KCP_NC);
 }
 context::~context(){
     ikcp_release(kcp_);
@@ -18,7 +23,7 @@ context::~context(){
 uint32_t context::get_conv(){
     return conv_;
 }
-uint32_t context::get_last_time(){
+uint64_t context::get_last_time(){
     return last_packet_recv_time_;
 }
 udp::endpoint context::get_host(){
@@ -41,12 +46,12 @@ void context::set_receive_callback(void(* callback)(void*,packet),void* ctx){
     receive_ctx_ = ctx;
 }
 
-void context::update(uint32_t clock){
+void context::update(uint64_t clock){
     ikcp_update(kcp_, clock);
 }
 
 void context::input(const char* data, size_t bytes, const udp::endpoint& peer){
-    last_packet_recv_time_ = util::time::clock_32();
+    last_packet_recv_time_ = util::time::clock_64();
     peer_ = peer;
     ikcp_input(kcp_, data, bytes);
     while(1){ 
@@ -90,7 +95,16 @@ int context::send_callback(const char *buf, int len, ikcpcb *kcp, void *user){
 }
 
 uint32_t context::generate_conv_global() {
-    return conv_global++;
+    uint32_t conv = conv_global.load(std::memory_order_acquire);
+    while(1){
+        uint32_t next = (conv + 1 > KCP_CONV_MAX) ? (KCP_CONV_MIN) : (conv + 1);
+        bool ret = conv_global.compare_exchange_strong(conv,next,std::memory_order_acq_rel,std::memory_order_relaxed);
+        if (ret) {
+            // success
+            return conv;
+        }
+    }
+    return 0;
 }
 
 uint32_t context::get_conv_from_packet(const char* data){

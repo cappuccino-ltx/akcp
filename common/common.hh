@@ -3,7 +3,6 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/placeholders.hpp>
 #include <boost/asio/ip/udp.hpp>
-#include <boost/system/error_code.hpp>
 #include <memory>
 #include <iostream>
 
@@ -21,14 +20,49 @@ using packet = std::shared_ptr<std::vector<byte>>;
 using link_data = std::pair<uint32_t, udp::endpoint>;
 using package = std::pair<udp::endpoint, packet>;
 
-#define RECEIVE_BUFFER_SIZE 1024 * 2
-#define CONNECTION_TIMEOUT 10 * 1000
+#define RECEIVE_BUFFER_SIZE (1024 * 2)
+#define CONNECTION_TIMEOUT (10 * 1000)
+
+// socket buffer
+#define SERVER_SOCKET_RECEIVE_BUFFER_SIZE (64 * 1024 * 1024)
+#define SERVER_SOCKET_SEND_BUFFER_SIZE (64 * 1024 * 1024)
+#define CLIENT_SOCKET_RECEIVE_BUFFER_SIZE (200 * 1024)
+#define CLIENT_SOCKET_SEND_BUFFER_SIZE (200 * 1024)
+
 // 160 ~ 0xffffffff - 160
 #define KCP_CONV_MIN 0xa0
 #define KCP_CONV_MAX 0xffffff5f
-#define MAX_TIMEOUT 0xffffffffffffffff
-// 
-#define UPDATE_INTERVAL 10
+#define MAX_TIMEOUT 0xefefefef
+
+#define KCP_MODE_DEFAULT 1
+#define KCP_MODE_MODERATE 2
+#define KCP_MODE_FAST 3
+
+#define  KCP_MODE KCP_MODE_MODERATE
+#if KCP_MODE == KCP_MODE_DEFAULT
+// kcp default configuration
+#define KCP_NODELAY 0
+#define KCP_INTERVAL 40
+#define KCP_RESEND 0
+#define KCP_NC 0
+#define KCP_RTT 800
+#elif KCP_MODE == KCP_MODE_MODERATE
+// kcp fast mode reteins congestion control configuration
+#define KCP_NODELAY 1
+#define KCP_INTERVAL 20
+#define KCP_RESEND 2
+#define KCP_NC 0
+#define KCP_RTT 200
+#elif KCP_MODE == KCP_MODE_FAST
+// kcp extreme fast mode configuration
+#define KCP_NODELAY 1
+#define KCP_INTERVAL 15
+#define KCP_RESEND 2
+#define KCP_NC 1
+#define KCP_RTT 150
+#endif
+
+#define KCP_DISCONNECT_WAIT_TIMEOUT (KCP_RTT)
 
 #define KCP_PACKAGE "\1\2##########\3\4"
 #define KCP_KEEPALIVE_REQUEST "\1\2PING######\3\4"

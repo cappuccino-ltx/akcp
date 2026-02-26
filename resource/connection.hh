@@ -11,7 +11,7 @@ public:
     explicit connection(uint32_t conv, const udp::endpoint& peer);
 
     uint32_t get_conv();
-    uint32_t is_alive(uint32_t clock);
+    uint32_t is_alive(uint64_t clock);
 
     void update(uint32_t clock);
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
@@ -27,7 +27,7 @@ public:
 
     void keepalive();
     void disconnect();
-    static void set_timeout(uint32_t time);
+    static void set_timeout(uint32_t milliseconds);
 
 private:
     static void receive_callback(void* ptr, packet pack);

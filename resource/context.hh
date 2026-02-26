@@ -1,5 +1,6 @@
 #pragma once 
 
+#include <atomic>
 #include <common.hh>
 #include <cstdint>
 #include <ikcp.h>
@@ -13,14 +14,14 @@ public:
     ~context();
 
     uint32_t get_conv();
-    uint32_t get_last_time();
+    uint64_t get_last_time();
     udp::endpoint get_host();
 
     void set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx);
     void set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx);
     void set_receive_callback(void(* callback)(void*,packet),void* ctx);
 
-    void update(uint32_t clock);
+    void update(uint64_t clock);
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
     bool send(const char* data, size_t size);
     bool send_packet(const packet& pack);
@@ -42,8 +43,8 @@ private:
     void(* send_callback_)(void*, const udp::endpoint&,const char *,size_t) { nullptr };
     void(* async_send_callback_)(void*, const udp::endpoint&,const packet&) { nullptr };
     void(* receive_callback_)(void*,packet) { nullptr };
-    uint32_t last_packet_recv_time_ {0};
-    static uint32_t conv_global;
+    uint64_t last_packet_recv_time_ {0};
+    static std::atomic_uint32_t conv_global;
 }; // class connection
 
 

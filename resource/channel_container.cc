@@ -1,49 +1,63 @@
 
 
-#include "channel_container.hh"
+    #include "channel_container.hh"
 
-namespace kcp{
+    namespace kcp{
 
-channel_container::channel_container(asio::io_context& io_ctx,std::atomic_bool& stop)
-    :timer_(io_ctx,stop)
-{
-    timer_.set_update_callback(channel_container::update_callback, this);
-}
-
-std::shared_ptr<channel> channel_container::find(uint32_t conv){
-    auto it = channels_.find(conv);
-    if (it == channels_.end()){
-        return nullptr;
+    channel_container::channel_container(asio::io_context& io_ctx,std::atomic_bool& stop)
+        :timer_(io_ctx,stop)
+    {
+        timer_.set_update_callback(channel_container::update_callback, this);
     }
-    return it->second;
-}
-void channel_container::update(uint32_t clock){
-    for(auto it = channels_.begin(); it != channels_.end();) {
-        std::shared_ptr<channel>& channel = it->second;
-        channel->conn_.update(clock);
-        if (false == channel->conn_.is_alive(clock)){
-            channel->do_timeout();
-            it = channels_.erase(it);
-            continue;
+
+    std::shared_ptr<channel> channel_container::find(uint32_t conv){
+        auto it = channels_.find(conv);
+        if (it == channels_.end()){
+            return nullptr;
         }
-        ++it;
+        return it->second;
     }
-}
-void channel_container::clear(){
-    channels_.clear();
-}
-std::shared_ptr<channel> channel_container::insert(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
-    std::shared_ptr<channel> chann(new channel(conv,peer,manager));
-    channels_[conv] = chann;
-    return chann;
-}
-void channel_container::remove(uint32_t conv){
-    channels_.erase(conv);
-}
+    void channel_container::clear(){
+        channels_.clear();
+    }
+    std::shared_ptr<channel> channel_container::insert(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
+        std::shared_ptr<channel> chann(new channel(conv,peer,manager));
+        channels_[conv] = chann;
+        uint64_t timing = chann->check(util::time::clock_32());
+        timer_.push(timing, conv);
+        return chann;
+    }
+    void channel_container::remove(uint32_t conv){
+        channels_.erase(conv);
+    }
+    void channel_container::remove_callback(void* self, uint32_t conv){
+        channel_container* self_ = static_cast<channel_container*>(self);
+        self_->channels_.erase(conv);
+    }
 
-size_t channel_container::size(){
-    return channels_.size();
-}
+    size_t channel_container::size(){
+        return channels_.size();
+    }
+
+    void channel_container::stop(){
+        clear();
+        timer_.stop();
+    }
+    void channel_container::update_callback(void* self, uint32_t conv ,uint64_t clock){
+        channel_container* self_ = static_cast<channel_container*>(self);
+        std::shared_ptr<channel> chann_ = self_->find(conv);
+        if (!chann_) {
+            // the connection has been disconnected
+            return ;
+        }
+        if (!chann_->conn_.is_alive(clock)) {
+            chann_->do_timeout();
+            return self_->remove(conv);
+        }
+        chann_->conn_.update(clock);
+        uint64_t timing = chann_->conn_.check(clock);
+        self_->timer_.push_internal(timing, conv);
+    }
 
 
-} // namespace kcp
+    } // namespace kcp

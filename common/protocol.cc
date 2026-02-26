@@ -10,6 +10,9 @@ std::string protocol::format_connect_response(uint32_t conv){
     return ret;
 }
 uint32_t protocol::parse_conv_from_response(const char* data){
+    if(data[0] != 1 || data[1] != 2 || data[12] != 3 || data[13] != 4) {
+        return 0;
+    }
     int ret = 0;
     for(int i = 2;i < 12; i++) {
         if(data[i] == ' ') continue;
