@@ -87,14 +87,22 @@ void kcp_thread::receive_callback(void* self,const udp::endpoint& point,const ch
         // server
         if (strcmp(data,KCP_CONNECT_REQUEST) == 0){
             uint32_t new_conv = context::generate_conv_global();
-            channel_manager::push_new_link_callback(self_->manager_.get(),new_conv,point);
+            channel_manager::push_half_link_callback(self_->manager_.get(),new_conv,point);
             std::string send_data = protocol::format_connect_response(new_conv);
             self_->loop_->send_message_internal(point,send_data.data(),KCP_PACKAGE_SIZE);
             return ;
         }
-        // client
+        // client and server create channel and client ack
         uint32_t conv = protocol::parse_conv_from_response(data);
         if (conv != 0) {
+            if (data[0] == 1 && data[1] == 2 && data[12] == 3 && data[13] == 4) {
+                // client ack
+                std::string send_data = protocol::format_connect_response_ack(conv);
+                self_->loop_->send_message_internal(point,send_data.data(),KCP_PACKAGE_SIZE);
+            }
+            // else if (data[0] == 4 && data[1] == 3 && data[12] == 2 && data[13] == 1){
+            //     // server
+            // }
             channel_manager::push_new_link_callback(self_->manager_.get(),conv,point);
             return;
         }

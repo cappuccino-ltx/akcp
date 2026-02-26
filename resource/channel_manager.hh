@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <thread>
+#include <unordered_map>
 #include "channel_container.hh"
 #include "timer_tasks.hh"
 
@@ -18,6 +19,8 @@ public:
     // single-threaded mode
     static void push_package_callback(void* self,const udp::endpoint& point, const char* data, size_t size);
     static void push_new_link_callback(void* self, uint32_t conv, const udp::endpoint& peer);
+    static void push_half_link_callback(void* self, uint32_t conv, const udp::endpoint& peer);
+    void remove_half_link(uint32_t conv);
     // set the callback function for sending messages in the socket layer to the channel
     void set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx);
     void set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx);
@@ -41,6 +44,8 @@ private:
     std::atomic<bool>& stop_;
     // channel container 
     channel_container container_;
+    // half channel
+    std::unordered_map<uint32_t,udp::endpoint> half_channel_;
     // timer tasks
     timer_tasks tasks_;
     std::thread::id cuurent_id;

@@ -27,7 +27,6 @@ int main() {
     server.set_connect_callback(on_connect);
     server.set_message_callback(on_message);
     server.enable_muliti_thread();
-    std::cout << "[" << std::this_thread::get_id() << "]" << std::endl;
     server.start(8080);
     return 0;    
 }

@@ -22,6 +22,7 @@ using package = std::pair<udp::endpoint, packet>;
 
 #define RECEIVE_BUFFER_SIZE (1024 * 2)
 #define CONNECTION_TIMEOUT (10 * 1000)
+#define HALF_CONNECTION_TIMEOUT (5 * 1000)
 
 // socket buffer
 #define SERVER_SOCKET_RECEIVE_BUFFER_SIZE (64 * 1024 * 1024)
@@ -69,6 +70,7 @@ using package = std::pair<udp::endpoint, packet>;
 #define KCP_KEEPALIVE_RESPONSE "\1\2PONG######\3\4"
 #define KCP_CONNECT_REQUEST "\1\2CONNECT###\3\4"
 #define KCP_CONNECT_RESPONSE "\1\2%10s\3\4" // snprintf
+#define KCP_CONNECT_RESPONSE_ACK "\4\3%10s\2\1" // snprintf
 #define KCP_DISCONNECT_REQUEST "\1\2DISCONNECT\3\4"
 #define KCP_DISCONNECT_RESPONSE KCP_PACKAGE
 #define KCP_PACKAGE_SIZE sizeof(KCP_PACKAGE)

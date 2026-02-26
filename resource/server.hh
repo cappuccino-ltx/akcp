@@ -16,7 +16,7 @@ public:
     void set_connect_callback(const std::function<void(channel_view,bool)>& callback);
     void set_message_callback(const std::function<void(channel_view,packet)>& callback);
 
-    void enable_muliti_thread(int n = 3);
+    void enable_muliti_thread(int n = std::thread::hardware_concurrency());
     void set_connection_timeout(uint32_t second = 10);
 
     void start(int port);

@@ -1,6 +1,7 @@
 
 
 #include "channel_manager.hh"
+#include "channel.hh"
 #include <ctime>
 
 namespace kcp{
@@ -20,6 +21,19 @@ void channel_manager::push_package_callback(void* self,const udp::endpoint& poin
 void channel_manager::push_new_link_callback(void* self, uint32_t conv, const udp::endpoint& peer){
     channel_manager* self_ = static_cast<channel_manager*>(self);
     self_->create_linked(conv, peer);
+}
+void channel_manager::push_half_link_callback(void* self, uint32_t conv, const udp::endpoint& peer){
+    channel_manager* self_ = static_cast<channel_manager*>(self);
+    self_->half_channel_.insert(std::make_pair(conv, peer));
+    // set timeout task
+    self_->timer_task(std::bind(&channel_manager::remove_half_link,self_,conv), HALF_CONNECTION_TIMEOUT);
+}
+void channel_manager::remove_half_link(uint32_t conv) {
+    auto it = half_channel_.find(conv);
+    if(it == half_channel_.end()) {
+        return ;
+    }
+    half_channel_.erase(it);
 }
 // set the callback function for sending messages in the socket layer to the channel
 void channel_manager::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
@@ -63,7 +77,14 @@ void channel_manager::receive_packet(const udp::endpoint& point, const char* dat
     uint32_t conv = context::get_conv_from_packet(data);
     std::shared_ptr<channel> chann = container_.find(conv);
     if (chann.get() == nullptr){
-        return ;
+        auto it = half_channel_.find(conv);
+        if(it == half_channel_.end()) {
+            return ;
+        }
+        if(point == it->second){
+            create_linked(conv, point);
+            remove_half_link(conv);
+        }
     }
     chann->conn_.input(data, size, point);
 }
