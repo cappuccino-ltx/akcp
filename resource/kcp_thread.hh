@@ -19,7 +19,7 @@ public:
     void set_connect_callback(const std::function<void(channel_view,bool)>& callback);
     void set_message_callback(const std::function<void(channel_view,packet)>& callback);
     void start(int port = -1, bool is_separate_thread = true);
-    void connect(const std::string& host, int port);
+    void connect(const std::string& ip, int port);
 private:
     static void receive_callback(void* self,const udp::endpoint& point,const char* data,size_t size);
 
@@ -29,7 +29,8 @@ private:
     std::shared_ptr<channel_manager> get_manager();
 
 private:
-    void connect_internal(const std::string& host, int port);
+    void connect_internal(const std::string& ip, int port);
+    void reconnect(const std::string& ip);
     void remove_connect(const udp::endpoint& point);
     void add_connect(const std::string& ip, int port);
     void add_connect_time_task(const std::string& host, int timeout);

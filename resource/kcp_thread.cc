@@ -71,24 +71,34 @@ void kcp_thread::start(int port, bool is_separate_thread){
     manager_->context_->run();
     return ;
 }
-void kcp_thread::connect(const std::string& host, int port){
+void kcp_thread::connect(const std::string& ip, int port){
     if(manager_->whthin_the_current_thread()) {
-        connect_internal(host, port);
+        connect_internal(ip, port);
     }else {
         manager_->post(std::bind(
             &kcp_thread::connect_internal,
             this,
-            host,
+            ip,
             port
         ));
     }
     return ;
 }
-void kcp_thread::connect_internal(const std::string& host, int port){
+void kcp_thread::connect_internal(const std::string& ip, int port){
     udp::resolver res(*manager_->context_);
-    udp::endpoint point(*res.resolve(host,std::to_string(port)).begin());
+    udp::endpoint point(*res.resolve(ip,std::to_string(port)).begin());
     loop_->send_message_internal(point, (void*)KCP_CONNECT_REQUEST, KCP_PACKAGE_SIZE);
-    add_connect(host,port);
+    add_connect(ip,port);
+    return ;
+}
+void kcp_thread::reconnect(const std::string& host){
+    std::string ip;
+    std::string port;
+    util::address::string_to_host(host, &ip, &port);
+
+    udp::resolver res(*manager_->context_);
+    udp::endpoint point(*res.resolve(ip,port).begin());
+    loop_->send_message_internal(point, (void*)KCP_CONNECT_REQUEST, KCP_PACKAGE_SIZE);
     return ;
 }
 void kcp_thread::receive_callback(void* self,const udp::endpoint& point,const char* data,size_t size){
@@ -164,6 +174,9 @@ void kcp_thread::connect_time_task(const std::string& host, int timeout){
         // the connection has been established 
         return ;
     }
+    // reconnection
+
+    // add timeout task
     timeout = kcp_timewait(timeout);
     if (timeout < 0) {
         return ;
