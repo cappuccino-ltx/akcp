@@ -34,20 +34,24 @@ udp::endpoint context::get_host(){
 void context::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
     send_callback_ = callback;
     send_ctx_ = ctx;
+    return ;
 }
 
 void context::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
     async_send_callback_ = callback;
     send_ctx_ = ctx;
+    return ;
 }
 
 void context::set_receive_callback(void(* callback)(void*,packet),void* ctx){
     receive_callback_ = callback;
     receive_ctx_ = ctx;
+    return ;
 }
 
 void context::update(uint64_t clock){
     ikcp_update(kcp_, clock);
+    return ;
 }
 
 void context::input(const char* data, size_t bytes, const udp::endpoint& peer){
@@ -66,6 +70,7 @@ void context::input(const char* data, size_t bytes, const udp::endpoint& peer){
             return ;
         }
     }
+    return ;
 }
 uint64_t context::check(uint64_t clock){
     uint32_t next_32 = ikcp_check(kcp_, (uint32_t)clock);

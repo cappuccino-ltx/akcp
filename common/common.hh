@@ -75,4 +75,8 @@ using package = std::pair<udp::endpoint, packet>;
 #define KCP_DISCONNECT_RESPONSE KCP_PACKAGE
 #define KCP_PACKAGE_SIZE sizeof(KCP_PACKAGE)
 
+#define KCP_CONNECT_TIME_WAIT KCP_RTT
+#define KCP_CONNECT_TIME_WAIT_MAX (KCP_CONNECT_TIME_WAIT << 5)
+#define kcp_timewait(time) (time == 0 ? KCP_CONNECT_TIME_WAIT : (time > KCP_CONNECT_TIME_WAIT_MAX ? -1 : (time << 1)))
+
 } // namespace kcp

@@ -22,6 +22,7 @@ void channel::send(const char* data, size_t size){
         packet pack = std::make_shared<std::vector<uint8_t>>(data, data + size);
         m->post(std::bind(&connection::send_packet,&conn_,pack));
     }
+    return ;
 }
 
 void channel::send(std::vector<uint8_t> && message){
@@ -35,6 +36,7 @@ void channel::send(std::vector<uint8_t> && message){
         packet pack = std::make_shared<std::vector<uint8_t>>(std::move(message));
         m->post(std::bind(&connection::send_packet,&conn_,pack));
     }
+    return ;
 }
 void channel::disconnect(){
     auto m = manager_.lock();
@@ -46,6 +48,7 @@ void channel::disconnect(){
     }else {
         m->post(std::bind(&connection::disconnect, &conn_));
     }
+    return ;
 }
 
 
@@ -63,28 +66,35 @@ void channel::do_timeout(){
     if (connect_callback_){
         connect_callback_(shared_from_this(),false);
     }
+    return ;
 }
 void channel::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
     conn_.set_send_callback(callback, ctx);
+    return ;
 }
 void channel::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
     conn_.set_async_send_callback(callback, ctx);
+    return ;
 }
 void channel::set_connect_callback(const std::function<void(channel_view,bool)> & callback){
     connect_callback_ = callback;
+    return ;
 }
 void channel::set_message_callback(const std::function<void(channel_view,packet)> & callback){
     message_callback_ = callback;
+    return ;
 }
 
 void channel::set_remove_cahnnel_callback(void(*callback)(void*,uint32_t),void* ctx){
     remove_channel_ctx_ = ctx;
     remove_channel_callback_ = callback;
+    return ;
 }
 
 void channel::message_callback(void* self,packet pack){
     channel* self_ = static_cast<channel*>(self);
     self_->message_callback_(self_->shared_from_this(),pack);
+    return ;
 }
 // connect layer call ,need to delete
 void channel::connect_callback(void* self,bool linked){
@@ -103,10 +113,12 @@ void channel::connect_callback(void* self,bool linked){
         );
         // self_->remove_channel_callback_(self_->remove_channel_ctx_, self_->conn_.get_conv());
     }
+    return ;
 }
 void channel::update_callback(void* self, uint32_t clock){
     channel* self_ = static_cast<channel*>(self);
     self_->conn_.update(clock);
+    return ;
 }
 
 uint64_t channel::check(uint64_t clock){

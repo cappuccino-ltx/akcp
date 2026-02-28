@@ -1,9 +1,11 @@
 #pragma once 
 
+
 #include "channel_manager.hh"
 #include "io_loop.hh"
 #include <memory>
 #include <thread>
+#include <unordered_set>
 
 namespace kcp{
 
@@ -27,10 +29,18 @@ private:
     std::shared_ptr<channel_manager> get_manager();
 
 private:
+    void connect_internal(const std::string& host, int port);
+    void remove_connect(const udp::endpoint& point);
+    void add_connect(const std::string& ip, int port);
+    void add_connect_time_task(const std::string& host, int timeout);
+    void connect_time_task(const std::string& host, int timeout);
+
+private:
     std::shared_ptr<channel_manager> manager_;
     std::shared_ptr<io_loop> loop_;
     // control variable
     std::atomic_bool& stop_;
+    std::unordered_set<std::string> connect_;
     // callback function 
     std::function<void(channel_view,bool)> connect_callback_;
     std::function<void(channel_view,packet)> message_callback_;

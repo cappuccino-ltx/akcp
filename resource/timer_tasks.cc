@@ -21,6 +21,7 @@ void timer_tasks::cancel(uint32_t index) {
         return ;
     }
     tasks.erase(it);
+    return ;
 }
 void timer_tasks::update_callback(void* self, uint32_t index ,uint64_t clock){
     timer_tasks* self_ = static_cast<timer_tasks*>(self);
@@ -32,6 +33,7 @@ void timer_tasks::update_callback(void* self, uint32_t index ,uint64_t clock){
         it->second();
     }
     self_->tasks.erase(it);
+    return ;
 }
 
 } // namespace kcp

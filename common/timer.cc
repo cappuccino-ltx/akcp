@@ -16,19 +16,23 @@ void timer::push(uint64_t clock, uint32_t conv){
     if (clock < next_timeout_){
         timer_.cancel();
     }
+    return ;
 }
 void timer::set_update_callback(void(* callback)(void*, uint32_t, uint64_t), void* ctx){
     update_callbacl_ = callback;
     update_ctx_ = ctx;
+    return ;
 }
 void timer::stop(){
     std::priority_queue<Item,std::vector<Item>,Compare> temp;
     heap_.swap(temp);
     timer_.cancel();
+    return ;
 }
 void timer::push_internal(uint64_t clock, uint32_t conv){
     Item it{.next_time_ = clock,.conv = conv};
     tasks_.push_back(it);
+    return ;
 }
 
 void timer::handler(boost::system::error_code ec){
@@ -44,12 +48,14 @@ void timer::handler(boost::system::error_code ec){
     if (!stop_ || !heap_.empty()){
         arm_to_top(now);
     }
+    return ;
 }
 void timer::handler_push_internal(){
     for (auto& item : tasks_) {
         heap_.push(item);
     }
     tasks_.clear();
+    return ;
 }
 void timer::handler_timeout(uint64_t now){
     while(!heap_.empty()) {
@@ -62,6 +68,7 @@ void timer::handler_timeout(uint64_t now){
             update_callbacl_(update_ctx_,top.conv,now);
         }
     }
+    return ;
 }
 void timer::arm_to_top(uint64_t now){
     if (heap_.empty()) {
@@ -71,6 +78,7 @@ void timer::arm_to_top(uint64_t now){
     }
     timer_.expires_after(std::chrono::milliseconds( next_timeout_ - now));
     timer_.async_wait(std::bind(&timer::handler,this,_1));
+    return ;
 }
 
 

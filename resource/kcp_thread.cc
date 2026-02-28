@@ -1,5 +1,7 @@
 
 #include "kcp_thread.hh"
+#include "address.hh"
+#include "common.hh"
 #include "number.hh"
 #include "protocol.hh"
 #include <chrono>
@@ -23,18 +25,21 @@ void kcp_thread::stop(){
     if (manager_) {
         manager_->stop();
     }
+    return ;
 }
 void kcp_thread::set_connect_callback(const std::function<void(channel_view,bool)>& callback){
     connect_callback_ = callback;
     if(manager_) {
         manager_->set_connect_callback(connect_callback_);
     }
+    return ;
 }
 void kcp_thread::set_message_callback(const std::function<void(channel_view,packet)>& callback){
     message_callback_ = callback;
     if (manager_) {
         manager_->set_message_callback(message_callback_);
     }
+    return ;
 }
 void kcp_thread::start(int port, bool is_separate_thread){
     std::shared_ptr<channel_manager> manager;
@@ -64,22 +69,27 @@ void kcp_thread::start(int port, bool is_separate_thread){
         return ;
     }
     manager_->context_->run();
+    return ;
 }
 void kcp_thread::connect(const std::string& host, int port){
-    udp::resolver res(*manager_->context_);
-    udp::endpoint point(*res.resolve(host,std::to_string(port)).begin());
     if(manager_->whthin_the_current_thread()) {
-        loop_->send_message_internal(point, (void*)KCP_CONNECT_REQUEST, KCP_PACKAGE_SIZE);
+        connect_internal(host, port);
     }else {
         manager_->post(std::bind(
-            &io_loop::send_message_internal,
-            loop_.get(),
-            point,
-            (void*)KCP_CONNECT_REQUEST, 
-            KCP_PACKAGE_SIZE
+            &kcp_thread::connect_internal,
+            this,
+            host,
+            port
         ));
     }
-    
+    return ;
+}
+void kcp_thread::connect_internal(const std::string& host, int port){
+    udp::resolver res(*manager_->context_);
+    udp::endpoint point(*res.resolve(host,std::to_string(port)).begin());
+    loop_->send_message_internal(point, (void*)KCP_CONNECT_REQUEST, KCP_PACKAGE_SIZE);
+    add_connect(host,port);
+    return ;
 }
 void kcp_thread::receive_callback(void* self,const udp::endpoint& point,const char* data,size_t size){
     kcp_thread* self_ = static_cast<kcp_thread*>(self);
@@ -99,6 +109,8 @@ void kcp_thread::receive_callback(void* self,const udp::endpoint& point,const ch
                 // client ack
                 std::string send_data = protocol::format_connect_response_ack(conv);
                 self_->loop_->send_message_internal(point,send_data.data(),KCP_PACKAGE_SIZE);
+                // remove timer
+                self_->remove_connect(point);
             }
             // else if (data[0] == 4 && data[1] == 3 && data[12] == 2 && data[13] == 1){
             //     // server
@@ -109,18 +121,55 @@ void kcp_thread::receive_callback(void* self,const udp::endpoint& point,const ch
     }
     packet pack = std::make_shared<std::vector<uint8_t>>(data, data + size);
     channel_manager::push_package_callback(self_->manager_.get(),point,data,size);
+    return ;
 }
 
 // thread execution function
 void kcp_thread::handler(){
     manager_ = std::make_shared<channel_manager>(std::ref(stop_));
     manager_->context_->run();
+    return ;
 }
 std::shared_ptr<channel_manager> kcp_thread::get_manager(){
     while(!manager_){
         std::this_thread::sleep_for(std::chrono::milliseconds(util::number::random(10, 20)));
     }
     return manager_;
+}
+
+void kcp_thread::remove_connect(const udp::endpoint& point){
+    std::string host;
+    util::address::point_to_string(point, &host);
+    auto it = connect_.find(host);
+    if (it == connect_.end()) {
+        return;
+    }
+    connect_.erase(it);
+    return ;
+}
+void kcp_thread::add_connect(const std::string& ip, int port){
+    std::string host;
+    util::address::host_to_string(ip, port, &host);
+    connect_.insert(host);
+    add_connect_time_task(host,kcp_timewait(0));
+    return ;
+}
+void kcp_thread::add_connect_time_task(const std::string& host, int timeout){
+    manager_->timer_task(std::bind(&kcp_thread::connect_time_task,this,host,timeout), timeout);
+    return ;
+}
+void kcp_thread::connect_time_task(const std::string& host, int timeout){
+    // query whether the connection has been established 
+    if(connect_.count(host) == 0) {
+        // the connection has been established 
+        return ;
+    }
+    timeout = kcp_timewait(timeout);
+    if (timeout < 0) {
+        return ;
+    }
+    add_connect_time_task(host, timeout);
+    return ;
 }
 
 } // namespace kcp

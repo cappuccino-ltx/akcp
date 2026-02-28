@@ -22,9 +22,11 @@ uint32_t connection::is_alive(uint64_t clock){
 
 void connection::update(uint32_t clock){
     context_.update(clock);
+    return ;
 }
 void connection::input(const char* data, size_t bytes, const udp::endpoint& peer){
     context_.input(data, bytes, peer);
+    return ;
 }
 uint64_t connection::check(uint64_t clock){
     return context_.check(clock);
@@ -32,17 +34,21 @@ uint64_t connection::check(uint64_t clock){
 
 void connection::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
     context_.set_send_callback(callback, ctx);
+    return ;
 }
 void connection::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
     context_.set_async_send_callback(callback, ctx);
+    return ;
 }
 void connection::set_message_callback(void(* callback)(void*,packet),void* ctx) {
     message_ctx_ = ctx;
     message_callback_ = callback;
+    return ;
 }
 void connection::set_connect_callback(void(* callback)(void*,bool),void* ctx){
     connect_ctx_ = ctx;
     connect_callback_ = callback;
+    return ;
 }
 
 bool connection::send(const char* data, size_t size){
@@ -53,12 +59,15 @@ bool connection::send_packet(const packet& pack){
 }
 void connection::keepalive(){
     send(KCP_KEEPALIVE_REQUEST,KCP_PACKAGE_SIZE);
+    return ;
 }
 void connection::disconnect(){
     send(KCP_DISCONNECT_REQUEST,KCP_PACKAGE_SIZE);
+    return ;
 }
 void connection::set_timeout(uint32_t milliseconds){
     connection_timeout = milliseconds;
+    return ;
 }
 
 void connection::receive_callback(void* self, packet pack){
@@ -89,6 +98,7 @@ void connection::receive_callback(void* self, packet pack){
     if(self_->message_callback_) {
         self_->message_callback_(self_->message_ctx_, pack);
     }
+    return ;
 }
 
 

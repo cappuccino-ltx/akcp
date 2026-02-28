@@ -11,9 +11,11 @@ server::server(){}
 
 void server::set_connect_callback(const std::function<void(channel_view,bool)>& callback){
     connect_callback_ = callback;
+    return ;
 }
 void server::set_message_callback(const std::function<void(channel_view,packet)>& callback){
     message_callback_ = callback;
+    return ;
 }
 
 void server::enable_muliti_thread(int n){
@@ -23,6 +25,7 @@ void server::enable_muliti_thread(int n){
         threads_.emplace_back(std::ref(stop_));
     }
 #endif
+    return ;
 }
 void server::set_connection_timeout(uint32_t second){
     connection::set_timeout(second * 1000);
@@ -41,6 +44,7 @@ void server::start(int port){
         threads_[i].start(port);
     }
     threads_[0].start(port,false);
+    return ;
 }
 
 void server::stop(){
@@ -55,6 +59,7 @@ void server::stop(){
             );
         });
     }
+    return ;
 }
 void server::stop_internal(){
     stop_.store(true, std::memory_order_release);
@@ -62,6 +67,7 @@ void server::stop_internal(){
     for(int i = 0; i < size; i++){
         threads_[i].stop();
     }
+    return ;
 }
 
 
