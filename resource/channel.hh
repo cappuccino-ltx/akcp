@@ -17,7 +17,8 @@ public:
     void send(const char* data, size_t size);
     void send(std::vector<uint8_t> && message);
     void disconnect();
-
+    void timer_task(std::function<void()>&& task, uint32_t milliseconds);
+    
 private:
     channel(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& managerk);
     // external call , no need to delete

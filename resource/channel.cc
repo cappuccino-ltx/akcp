@@ -90,6 +90,14 @@ void channel::set_remove_cahnnel_callback(void(*callback)(void*,uint32_t),void* 
     remove_channel_callback_ = callback;
     return ;
 }
+void channel::timer_task(std::function<void()>&& task, uint32_t milliseconds){
+    std::shared_ptr<channel_manager> m = manager_.lock();
+    if(!m) {
+        return ;
+    }
+    m->timer_task(std::move(task), milliseconds);
+    return ;
+}
 
 void channel::message_callback(void* self,packet pack){
     channel* self_ = static_cast<channel*>(self);

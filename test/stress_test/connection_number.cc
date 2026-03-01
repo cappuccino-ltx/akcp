@@ -13,122 +13,108 @@
 // arg
 std::string ip ;
 int port;
-int clients = 1;
+int client_num = 1;
 int times = 10;
 int interval = 60;
 std::string message;
 
+// test arg
+std::atomic_bool stop = false;
+int tick_interval = 20; // send message time interval
+
 // result
 std::atomic_int64_t request_count = 0;
+std::atomic_int64_t response_count = 0;
 std::atomic_int64_t packet_loss = 0;
-std::atomic_int64_t connect_count = 0;
+std::atomic_int connect_count = 0;
 
-void on_connect(kcp::channel_view* user_channel, std::atomic_bool* is_linked,kcp::channel_view channel, bool linked){
+void send_message(kcp::channel_view channel){
+    ++request_count;
+    channel->send(message.c_str(),message.size());
+    if (stop.load(std::memory_order_acquire)) {
+        channel->disconnect();
+        return;
+    }
+    auto back = std::bind(send_message, channel);
+    channel->timer_task(back, tick_interval);
+}
+
+void on_connect(kcp::channel_view channel, bool linked){
     if(linked) {
-        connect_count++;
-        *is_linked = true;
-        *user_channel = channel;
-        std::cout << "连接成功" << std::endl;
+        ++connect_count;
+        // std::cout << "连接成功" << std::endl;
+        send_message(channel);
     }else {
-        std::cout << "连接断开" << std::endl;
+        // std::cout << "连接断开" << std::endl;
     }
 }
 
-void on_message(size_t* count, kcp::channel_view channel, kcp::packet packet){
+void on_message(kcp::channel_view channel, kcp::packet packet){
     // std::cout << "收到消息 : " << (const char*)packet->data() << std::endl;
     // if(packet->size() == message.size() && (strcmp((char*)packet->data(), message.c_str()) == 0)) {
-    //     ++*count;
+        ++response_count;
     // }
-    ++*count;
 }
 
-void client_test(){
-    kcp::client client;
-    kcp::channel_view channel;
-    std::atomic_bool is_linked = false;
-    size_t echo_count = 0;
-    size_t send_count = 0;
-
-    auto connection_callback = std::bind(on_connect,&channel,&is_linked,kcp::_1,kcp::_2);
-    auto message_callback = std::bind(on_message,&echo_count,kcp::_1,kcp::_2);
-    client.set_connect_callback(connection_callback);
-    client.set_message_callback(message_callback);
-
-    client.connect(ip, port);
-    
-    float per_tick = interval / 1000.0f;
-    float acc = 0.0f;
-
-    int tick = 1000 / interval;
+void test(){
+    std::cout << "test preparation ..." << std::endl;
+    // std::list<kcp::client> clients;
+    kcp::client* clients = new kcp::client[client_num];
+    tick_interval = 1000 / interval;
     if (interval > 1000) {
-        tick = 1;
-    }
-    while(!is_linked.load()){
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        tick_interval = 1;
     }
 
+    for (int i = 0; i < client_num; i++) {
+        clients[i].set_connect_callback(on_connect);
+        clients[i].set_message_callback(on_message);
+    }
+    std::cout << "test begin" << std::endl;
+    for (int i = 0; i < client_num; i++) {
+        clients[i].connect(ip, port);
+    }
     auto next = std::chrono::steady_clock::now();
     auto end = next + std::chrono::seconds(times);
-    while (next <= end) {
-        int send_n = 1;
-        if (per_tick > 1) {
-            acc += per_tick;
-            send_n = (int)acc;
-            acc -= send_n;
-        }
-        // send
-        for (int i = 0; i < send_n; i++) {
-            send_count++;
-            channel->send(message.data(),message.size());
-        }
-
-        next += std::chrono::milliseconds(tick);
-        std::this_thread::sleep_until(next);
+    std::this_thread::sleep_until(end);
+    stop = true;
+    for (int i = 0; i < client_num; i++) {
+        clients[i].stop();
     }
-    channel->disconnect();
-    client.stop();
+    std::cout << "test end" << std::endl;
     // wait disconnection
     std::this_thread::sleep_for(std::chrono::milliseconds(KCP_RTT));
     // summary
-    request_count += send_count;
-    packet_loss += send_count - echo_count;
+    packet_loss = request_count - response_count;
 }
 
 
-void test(){
-    std::list<std::thread> threads;
-    for (int i = 0; i < clients; i++){
-        threads.emplace_back(client_test);
-    }
-    for(auto & t : threads){
-        t.join();
-    }
-    threads.clear();
-}
 
 void result(){
     Json::Value root;
-    root["test time"] = times;
-    root["client number"] = clients;
-    root["request rate"] = interval;
-    root["total speed"] = interval * clients;
-    root["package size"] = message.size();
-    root["result"]["pps"]["server rx(/s)"] = request_count / times;
-    root["result"]["pps"]["server tx(/s)"] = (request_count - packet_loss) / times;
-    root["result"]["pps"]["total(/s)"] = (request_count * 2 - packet_loss) / times;
-    root["result"]["bps"]["server rx(b/s)"] = request_count * message.size() / times ;// / 1024 / 1024;
-    root["result"]["bps"]["server tx(b/s)"] = (request_count - packet_loss) * message.size() / times;// / 1024 / 1024;
-    root["result"]["bps"]["total(/s)"] = (request_count * 2 - packet_loss) * message.size() / times;// / 1024 / 1024;
-    root["result"]["loss"] = packet_loss.load();
+    root["1.settings"]["test time"] = times;
+    root["1.settings"]["client number(preset)"] = client_num;
+    root["1.settings"]["client number(success)"] = connect_count.load();
+    root["1.settings"]["request rate(/s)"] = interval;
+    root["1.settings"]["total speed"] = interval * connect_count.load();
+    root["1.settings"]["package size"] = message.size();
+    root["2.client result"]["pps"]["server rx(/s)"] = request_count / times;
+    root["2.client result"]["pps"]["server tx(/s)"] = (request_count - packet_loss) / times;
+    root["2.client result"]["pps"]["total(/s)"] = (request_count * 2 - packet_loss) / times;
+    root["2.client result"]["bps"]["server rx(b/s)"] = request_count * message.size() / times ;// / 1024 / 1024;
+    root["2.client result"]["bps"]["server tx(b/s)"] = (request_count - packet_loss) * message.size() / times;// / 1024 / 1024;
+    root["2.client result"]["bps"]["total(/s)"] = (request_count * 2 - packet_loss) * message.size() / times;// / 1024 / 1024;
+    root["2.client result"]["loss"] = packet_loss.load();
     // Manual filling
-    root["server"]["cpu avg(%)"] = 0;
-    root["server"]["cpu max(%)"] = 0;
-    root["server"]["memory avg(mb)"] = 0;
-    root["server"]["memory max(mb)"] = 0;
+    root["3.server"]["cpu avg(%)"] = 0;
+    root["3.server"]["cpu max(%)"] = 0;
+    root["3.server"]["memory avg(mb)"] = 0;
+    root["3.server"]["memory max(mb)"] = 0;
     // 写入文件
     std::ofstream ofs("./result.json");
     auto writer = Json::StreamWriterBuilder().newStreamWriter();
     writer->write(root, &ofs);
+    writer->write(root, &std::cout);
+    std::cout << std::endl;
     delete writer;
     ofs.close();
 }
@@ -143,7 +129,7 @@ int main(int argc, char* args[]) {
     }
     ip = args[1];
     port = atoi(args[2]);
-    if (argc >= 4) clients = atoi(args[3]);
+    if (argc >= 4) client_num = atoi(args[3]);
     if (argc >= 5) times = atoi(args[4]);
     if (argc >= 6) interval = atoi(args[5]);
     if (argc >= 7) message.resize(atoi(args[6]),' ');
