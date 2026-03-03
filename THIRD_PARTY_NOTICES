@@ -1,0 +1,15 @@
+This project includes third-party code from KCP (ikcp).
+
+Component: KCP
+Files:
+- common/ikcp.c
+- common/ikcp.h
+
+Original Author:
+- skywind3000 (skywind3000@gmail.com)
+
+Upstream:
+- https://github.com/skywind3000/kcp
+
+License:
+- Keep and comply with the original license/copyright notice in ikcp source files.
