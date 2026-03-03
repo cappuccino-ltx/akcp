@@ -2,9 +2,7 @@
 
 
 #include <server.hh>
-#include <functional>
 #include <iostream>
-#include <thread>
 kcp::server* server_global = nullptr;
 void on_connect(kcp::channel_view channel, bool linked){
     if(linked) {

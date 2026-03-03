@@ -6,6 +6,7 @@
 #include <memory>
 #include <thread>
 #include <unordered_set>
+#include <future>
 
 namespace kcp{
 
@@ -25,8 +26,7 @@ private:
 
 private:
     // thread execution function
-    void handler();
-    std::shared_ptr<channel_manager> get_manager();
+    void handler(std::promise<bool>& promise);
 
 private:
     void connect_internal(const std::string& ip, int port);
