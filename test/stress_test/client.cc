@@ -4,10 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <jsoncpp/json/writer.h>
-#include <list>
 #include <thread>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <fstream>
 
 // arg
@@ -52,7 +50,7 @@ void on_connect(kcp::channel_view channel, bool linked){
 void on_message(kcp::channel_view channel, kcp::packet packet){
     // std::cout << "收到消息 : " << (const char*)packet->data() << std::endl;
     if(packet->size() == message.size()) {
-        if (strcmp((char*)packet->data(), message.c_str()) == 0){
+        if (strncmp((char*)packet->data(), message.c_str(), message.size()) == 0){
             ++response_count;
         }else {
             std::cout << "strcmp result != 0" << std::endl;

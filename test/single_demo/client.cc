@@ -5,7 +5,6 @@
 #include <client.hh>
 #include <iostream>
 #include <thread>
-#include <unistd.h>
 
 kcp::channel_view channel_global;
 

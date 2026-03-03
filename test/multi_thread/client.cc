@@ -6,7 +6,6 @@
 #include <iostream>
 #include <list>
 #include <thread>
-#include <unistd.h>
 
 std::atomic<int> count = 0;
 

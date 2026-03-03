@@ -11,7 +11,7 @@ timer::timer(asio::io_context& io_ctx,std::atomic_bool& stop)
 }
 
 void timer::push(uint64_t clock, uint32_t conv){
-    Item it{.next_time_ = clock,.conv = conv};
+    Item it{clock,conv};
     heap_.push(it);
     if (clock < next_timeout_){
         timer_.cancel();
@@ -30,7 +30,7 @@ void timer::stop(){
     return ;
 }
 void timer::push_internal(uint64_t clock, uint32_t conv){
-    Item it{.next_time_ = clock,.conv = conv};
+    Item it{clock,conv};
     tasks_.push_back(it);
     return ;
 }
