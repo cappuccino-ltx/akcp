@@ -21,12 +21,17 @@ void on_message(kcp::channel_view channel, kcp::packet packet){
 }
 
 
-int main() {
+int main(int argc , char* args[]) {
+    if (argc != 2) {
+        std::cout << "usage : " << args[0] << " port " << std::endl;
+        return 1;
+    }
+    int port = std::stoi(args[1]);
     kcp::server server;
     server_global = &server;
     server.set_connect_callback(on_connect);
     server.set_message_callback(on_message);
     server.enable_muliti_thread();
-    server.start(8080);
+    server.start(port);
     return 0;    
 }

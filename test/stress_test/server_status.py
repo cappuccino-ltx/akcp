@@ -14,7 +14,7 @@ INTERVAL = 1.0  # 采样间隔（秒）
 
 p = psutil.Process(PID)
 
-# 预热一次（很重要）
+# 预热一次
 p.cpu_percent(interval=None)
 
 cpu_values = []
