@@ -1,3 +1,5 @@
+本项目包含第三方 KCP (ikcp) 代码，详见 THIRD_PARTY_NOTICES。
+
 # akcp
 
 基于 Boost.Asio + KCP 的轻量封装库，提供面向业务的 `server/client/channel` 接口，支持连接管理、消息收发、超时回收与基础压测示例。
