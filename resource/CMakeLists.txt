@@ -6,7 +6,7 @@ file(GLOB RESOURCE_SRC CONFIGURE_DEPENDS
 
 add_library(akcp STATIC ${RESOURCE_SRC} $<TARGET_OBJECTS:kcp_common>)
 
-target_link_libraries(akcp PUBLIC Boost::system Boost::asio)
+target_link_libraries(akcp PUBLIC ${Boost_LIBRARIES})
 
 target_include_directories(akcp PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/resource>

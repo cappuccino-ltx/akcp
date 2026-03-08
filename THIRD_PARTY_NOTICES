@@ -1,15 +1,19 @@
-This project includes third-party code from KCP (ikcp).
+This project includes third-party code and references related to KCP (ikcp).
 
 Component: KCP
-Files:
+ Files:
+
 - common/ikcp.c
 - common/ikcp.h
-
 Original Author:
-- skywind3000 (skywind3000@gmail.com)
 
+- skywind3000 ( skywind3000@gmail.com )
 Upstream:
-- https://github.com/skywind3000/kcp
 
+- https://github.com/skywind3000/kcp
+Additional Reference / Inspiration:
+
+- https://github.com/limpo1989/kcp-csharp
 License:
-- Keep and comply with the original license/copyright notice in ikcp source files.
+
+- Keep and comply with the original license/copyright notice in the upstream KCP source files (ikcp.c/ikcp.h) and any applicable notices required by referenced third-party projects.

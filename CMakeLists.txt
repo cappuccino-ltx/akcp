@@ -11,7 +11,7 @@ option(AKCP_BUILD_TESTS "Build akcp tests" ON)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-find_package(Boost CONFIG REQUIRED COMPONENTS asio system)
+find_package(Boost CONFIG REQUIRED COMPONENTS thread system)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/common/)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/resource/)
