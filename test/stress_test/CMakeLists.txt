@@ -4,6 +4,7 @@ add_executable(server_stress server.cc)
 target_link_libraries(server_stress PRIVATE akcp)
 
 add_executable(client_stress client.cc)
+find_package(jsoncpp CONFIG REQUIRED)
 if(TARGET JsonCpp::JsonCpp)
     target_link_libraries(client_stress PRIVATE akcp JsonCpp::JsonCpp)
 elseif(TARGET jsoncpp_lib)
