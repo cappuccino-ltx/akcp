@@ -32,7 +32,6 @@ linux
 
 ```bash
 mkdir build; cd build
-cmake -S .. -B build -DAKCP_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${/path/to/dir}
 cmake -S .. -B . -DAKCP_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${/path/to/dir}
 make; sudo make install
 ```
