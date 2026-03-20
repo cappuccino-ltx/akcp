@@ -1,6 +1,7 @@
 #include "context.hh"
 #include "common.hh"
 #include "ikcp.h"
+#include "time.hh"
 #include <atomic>
 #include <cstdint>
 namespace kcp{

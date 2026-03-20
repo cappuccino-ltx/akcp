@@ -1,9 +1,9 @@
 #pragma once 
 
 #include <atomic>
-#include <common.hh>
+#include "common.hh"
 #include <functional>
-#include <protocol.hh>
+#include "protocol.hh"
 #include "kcp_thread.hh"
 
 

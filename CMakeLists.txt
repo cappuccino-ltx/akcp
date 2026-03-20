@@ -13,7 +13,6 @@ include(CMakePackageConfigHelpers)
 find_package(Boost REQUIRED)
 find_package(Boost CONFIG REQUIRED COMPONENTS system)
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/common/)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/resource/)
 if(AKCP_BUILD_TESTS)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test/)

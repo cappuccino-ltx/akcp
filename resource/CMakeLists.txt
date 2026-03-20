@@ -1,16 +1,14 @@
-
-
 file(GLOB RESOURCE_SRC CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 )
 
-add_library(akcp STATIC ${RESOURCE_SRC} $<TARGET_OBJECTS:kcp_common>)
+add_library(akcp STATIC ${RESOURCE_SRC})
 
 target_link_libraries(akcp PUBLIC ${Boost_LIBRARIES})
 
 target_include_directories(akcp PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/resource>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/common>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/akcp>
 )
 
@@ -24,9 +22,4 @@ install(TARGETS akcp
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/resource/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/akcp
     FILES_MATCHING PATTERN "*.hh"
-)
-
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/common/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/akcp
-    FILES_MATCHING PATTERN "*.hh" PATTERN "*.h"
 )
