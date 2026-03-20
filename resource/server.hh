@@ -3,7 +3,7 @@
 #include "channel_manager.hh"
 #include "common.hh"
 #include "kcp_thread.hh"
-#include <protocol.hh>
+
 #include <atomic>
 #include <functional>
 
