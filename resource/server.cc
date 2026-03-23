@@ -3,6 +3,7 @@
 #include "server.hh"
 #include "common.hh"
 #include "connection.hh"
+#include "packet.hh"
 #include <functional>
 
 namespace kcp{
@@ -16,6 +17,9 @@ void server::set_connect_callback(const std::function<void(channel_view,bool)>& 
 void server::set_message_callback(const std::function<void(channel_view,packet)>& callback){
     message_callback_ = callback;
     return ;
+}
+void server::set_buffer_pool(const std::function<packet(size_t)>& back){
+    buffer_pool_interface::set_packet_get_callback(back);
 }
 
 void server::enable_muliti_thread(int n){

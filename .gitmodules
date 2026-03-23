@@ -1,0 +1,3 @@
+[submodule "test/lockfreequeue"]
+	path = test/lockfreequeue
+	url = https://github.com/cappuccino-ltx/lockfreequeue.git

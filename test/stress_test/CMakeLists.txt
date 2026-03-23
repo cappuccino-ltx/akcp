@@ -1,6 +1,7 @@
 
 
 add_executable(server_stress server.cc)
+target_include_directories(server_stress PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../lockfreequeue/include)
 target_link_libraries(server_stress PRIVATE akcp)
 
 add_executable(client_stress client.cc)

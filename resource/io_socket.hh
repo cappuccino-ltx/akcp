@@ -26,7 +26,7 @@ private:
 
 private:
     udp::socket socket_;
-    std::vector<byte> buffer_;
+    std::vector<uint8_t> buffer_;
     udp::endpoint remote_endpoint_;
     void* receive_ctx { nullptr };
     void* send_ctx { nullptr };

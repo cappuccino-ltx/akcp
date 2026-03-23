@@ -1,6 +1,7 @@
 
 
 #include "client.hh"
+#include "packet.hh"
 
 
 namespace kcp{
@@ -16,7 +17,9 @@ void client::set_message_callback(const std::function<void(channel_view,packet)>
     kcp_thread_->set_message_callback(callback);
     return ;
 }
-
+void client::set_buffer_pool(const std::function<packet(size_t)>& back){
+    buffer_pool_interface::set_packet_get_callback(back);
+}
 void client::connect(const std::string& host,int port){
     kcp_thread_->connect(host, port);
     return ;

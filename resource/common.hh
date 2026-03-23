@@ -14,8 +14,7 @@ using udp = asio::ip::udp;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-using byte = unsigned char;
-using packet = std::shared_ptr<std::vector<byte>>;
+using packet = std::shared_ptr<std::vector<uint8_t>>;
 // muliti thread exchange data
 using link_data = std::pair<uint32_t, udp::endpoint>;
 using package = std::pair<udp::endpoint, packet>;
@@ -33,7 +32,7 @@ using package = std::pair<udp::endpoint, packet>;
 // 160 ~ 0xffffffff - 160
 #define KCP_CONV_MIN 0xa0
 #define KCP_CONV_MAX 0xffffff5f
-#define MAX_TIMEOUT 0xefefefef
+#define MAX_TIMEOUT 0xefefefefefefefefllu
 
 #define KCP_MODE_DEFAULT 1
 #define KCP_MODE_MODERATE 2
@@ -63,7 +62,7 @@ using package = std::pair<udp::endpoint, packet>;
 #define KCP_RTT 150
 #endif
 
-#define KCP_DISCONNECT_WAIT_TIMEOUT (KCP_RTT)
+#define KCP_DISCONNECT_WAIT_TIMEOUT (KCP_RTT * 4)
 
 #define KCP_PACKAGE "\1\2##########\3\4"
 #define KCP_KEEPALIVE_REQUEST "\1\2PING######\3\4"

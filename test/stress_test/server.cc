@@ -1,8 +1,15 @@
 
 
 
+#include <cstdint>
 #include <server.hh>
 #include <iostream>
+#include "buffer_pool.hh"
+
+kcp::packet get_buffer(size_t size){
+    return buffer_pool::get_buffer<uint8_t>(size);
+}
+
 kcp::server* server_global = nullptr;
 void on_connect(kcp::channel_view channel, bool linked){
     if(linked) {
@@ -29,6 +36,7 @@ int main(int argc , char* args[]) {
     server_global = &server;
     server.set_connect_callback(on_connect);
     server.set_message_callback(on_message);
+    server.set_buffer_pool(get_buffer);
     server.enable_muliti_thread();
     server.start(port);
     return 0;    
