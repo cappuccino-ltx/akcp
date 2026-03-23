@@ -1,6 +1,7 @@
 #include "context.hh"
 #include "common.hh"
 #include "ikcp.h"
+#include "packet.hh"
 #include "time.hh"
 #include <atomic>
 #include <cstdint>
@@ -11,7 +12,7 @@ std::atomic_uint32_t context::conv_global = KCP_CONV_MIN;
 context::context(unsigned int conv, const udp::endpoint& peer)
     :peer_(peer),
     conv_(conv),
-    last_packet_recv_time_(util::time::clock_32())
+    last_packet_recv_time_(util::time::clock_64())
 {
     kcp_ = ikcp_create(conv_, this);
     kcp_->output = context::send_callback;
@@ -50,6 +51,7 @@ void context::set_receive_callback(void(* callback)(void*,packet),void* ctx){
     return ;
 }
 
+
 void context::update(uint64_t clock){
     ikcp_update(kcp_, clock);
     return ;
@@ -62,7 +64,8 @@ void context::input(const char* data, size_t bytes, const udp::endpoint& peer){
     while(1){ 
         int readable_size = ikcp_peeksize(kcp_);
         if (readable_size > 0) {
-            packet pack(std::make_shared<std::vector<uint8_t>>(readable_size));
+            packet pack = buffer_pool_interface::get_packet(readable_size);
+            pack->resize(readable_size);
             int size = ikcp_recv(kcp_, (char*)pack->data(), pack->size());
             if (size > 0 && receive_callback_) {
                 receive_callback_(receive_ctx_,pack);
@@ -92,7 +95,9 @@ bool context::send_packet(const packet& pack){
 int context::send_callback(const char *buf, int len, ikcpcb *kcp, void *user){
     context* this_ = static_cast<context*>(user);
     if (this_->async_send_callback_) {
-        packet pack = std::make_shared<std::vector<uint8_t>>(buf, buf + len);
+        packet pack = buffer_pool_interface::get_packet(len);
+        pack->resize(len);
+        std::copy(buf, buf + len, pack->data());
         this_->async_send_callback_(this_->send_ctx_, this_->peer_, pack);
     } else if (this_->send_callback_){
         this_->send_callback_(this_->send_ctx_, this_->peer_, buf, len);

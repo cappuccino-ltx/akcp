@@ -18,6 +18,7 @@ public:
 
     void enable_muliti_thread(int n = std::thread::hardware_concurrency());
     void set_connection_timeout(uint32_t second = 10);
+    void set_buffer_pool(const std::function<packet(size_t)>& back);
 
     void start(int port);
     void stop();

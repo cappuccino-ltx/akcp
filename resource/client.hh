@@ -17,6 +17,8 @@ public:
     void connect(const std::string& host,int port);
     void stop();
 
+    void set_buffer_pool(const std::function<packet(size_t)>& back);
+
 private:
     void stop_internal();
     static void receive_callback(void* self,const udp::endpoint& point,const char* data,size_t size);

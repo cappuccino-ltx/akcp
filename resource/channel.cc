@@ -4,6 +4,7 @@
 #include "channel_manager.hh"
 #include "common.hh"
 #include "connection.hh"
+#include "packet.hh"
 #include <cstdlib>
 #include <functional>
 
@@ -19,13 +20,31 @@ void channel::send(const char* data, size_t size){
     if (m->whthin_the_current_thread()){
         conn_.send(data, size);
     }else {
-        packet pack = std::make_shared<std::vector<uint8_t>>(data, data + size);
+        packet pack = buffer_pool_interface::get_packet(size);
+        pack->resize(size);
+        std::copy(data, data + size, pack->data());
         m->post(std::bind(&connection::send_packet,&conn_,pack));
     }
     return ;
 }
 
-void channel::send(std::vector<uint8_t> && message){
+void channel::send(const std::string& message){
+    auto m = manager_.lock();
+    if (!m) {
+        abort();
+    }
+    if (m->whthin_the_current_thread()){
+        conn_.send(message.data(), message.size());
+    }else {
+        packet pack = buffer_pool_interface::get_packet(message.size());
+        pack->resize(message.size());
+        std::copy(message.data(), message.data() + message.size(), pack->data());
+        m->post(std::bind(&connection::send_packet,&conn_,pack));
+    }
+    return ;
+}
+
+void channel::send(const std::vector<uint8_t> & message){
     auto m = manager_.lock();
     if (!m) {
         abort();
@@ -33,8 +52,23 @@ void channel::send(std::vector<uint8_t> && message){
     if (m->whthin_the_current_thread()){
         conn_.send((const char*)message.data(), message.size());
     }else {
-        packet pack = std::make_shared<std::vector<uint8_t>>(std::move(message));
+        packet pack = buffer_pool_interface::get_packet(message.size());
+        pack->resize(message.size());
+        std::copy(message.data(), message.data() + message.size(), pack->data());
         m->post(std::bind(&connection::send_packet,&conn_,pack));
+    }
+    return ;
+}
+
+void channel::send(packet message){
+    auto m = manager_.lock();
+    if (!m) {
+        abort();
+    }
+    if (m->whthin_the_current_thread()){
+        conn_.send((const char*)message->data(), message->size());
+    }else {
+        m->post(std::bind(&connection::send_packet,&conn_, message));
     }
     return ;
 }
@@ -110,7 +144,7 @@ void channel::connect_callback(void* self,bool linked){
     if (self_->connect_callback_){
         self_->connect_callback_(self_->shared_from_this(),linked);
     }
-    if (self_->remove_channel_callback_){
+    if (!linked && self_->remove_channel_callback_){
         self_->manager_.lock()->timer_task(
             std::bind(
                 self_->remove_channel_callback_,

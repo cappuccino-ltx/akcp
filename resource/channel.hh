@@ -15,7 +15,9 @@ class channel : public std::enable_shared_from_this<channel>{
 public:
     ~channel();
     void send(const char* data, size_t size);
-    void send(std::vector<uint8_t> && message);
+    void send(const std::string& message);
+    void send(const std::vector<uint8_t> & message);
+    void send(packet message);
     void disconnect();
     void timer_task(std::function<void()>&& task, uint32_t milliseconds);
     

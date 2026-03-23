@@ -16,7 +16,7 @@ connection::connection(uint32_t conv, const udp::endpoint& peer)
 uint32_t connection::get_conv() {
     return context_.get_conv();
 }
-uint32_t connection::is_alive(uint64_t clock){
+bool connection::is_alive(uint64_t clock){
     return clock - context_.get_last_time() < connection_timeout;
 }
 

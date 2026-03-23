@@ -10,7 +10,7 @@ public:
     explicit connection(uint32_t conv, const udp::endpoint& peer);
 
     uint32_t get_conv();
-    uint32_t is_alive(uint64_t clock);
+    bool is_alive(uint64_t clock);
 
     void update(uint32_t clock);
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
