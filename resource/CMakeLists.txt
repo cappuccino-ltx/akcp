@@ -21,5 +21,7 @@ install(TARGETS akcp
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/resource/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/akcp
-    FILES_MATCHING PATTERN "*.hh"
+    FILES_MATCHING 
+    PATTERN "*.hh"
+    PATTERN "*.h"
 )
