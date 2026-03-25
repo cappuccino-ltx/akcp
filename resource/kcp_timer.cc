@@ -1,4 +1,4 @@
-#include "timer.hh"
+#include "kcp_timer.hh"
 #include "time.hh"
 
 namespace kcp{
@@ -73,10 +73,11 @@ void timer::handler_timeout(uint64_t now){
 void timer::arm_to_top(uint64_t now){
     if (heap_.empty()) {
         next_timeout_ = MAX_TIMEOUT;
+        timer_.expires_after(std::chrono::milliseconds(MAX_TIMEOUT_TIMER));
     }else {
         next_timeout_ = heap_.top().next_time_;
+        timer_.expires_after(std::chrono::milliseconds(next_timeout_ - now));
     }
-    timer_.expires_after(std::chrono::milliseconds( next_timeout_ - now));
     timer_.async_wait(std::bind(&timer::handler,this,_1));
     return ;
 }

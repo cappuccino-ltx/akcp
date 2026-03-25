@@ -7,7 +7,7 @@
 #include <cstdint>
 namespace kcp{
 
-std::atomic_uint32_t context::conv_global = KCP_CONV_MIN;
+std::atomic_uint32_t context::conv_global{KCP_CONV_MIN};
 
 context::context(unsigned int conv, const udp::endpoint& peer)
     :peer_(peer),
@@ -84,7 +84,7 @@ uint64_t context::check(uint64_t clock){
 
 bool context::send(const char* data, size_t size){
     int ret = ikcp_send(kcp_, data, size);
-    update(util::time::clock_32());
+    // update(util::time::clock_32());
     return ret >= 0;
 }
 bool context::send_packet(const packet& pack){

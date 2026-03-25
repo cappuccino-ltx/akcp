@@ -7,7 +7,7 @@
 #include <list>
 #include <thread>
 
-std::atomic<int> count = 0;
+std::atomic<int> count {0};
 
 void on_connect(kcp::channel_view channel, bool linked){
     if(linked) {
@@ -26,23 +26,18 @@ void on_message(kcp::channel_view channel, kcp::packet packet){
 }
 
 int main() {
-
-    std::list<kcp::client> clients;
-    for(int i = 0; i < 100; i++) {
-        clients.emplace_back();
-        clients.back().set_connect_callback(on_connect);
-        clients.back().set_message_callback(on_message);
+    int n = 100;
+    kcp::client client;
+    client.set_connect_callback(on_connect);
+    client.set_message_callback(on_message);
+    for(int i = 0; i < n; i++) {
+        // 第三个参数为 true , 代表创建不同的套接字发起请求
+        client.connect("127.0.0.1", 8080, true); 
     }
-    for(auto& client: clients) {
-        client.connect("127.0.0.1", 8080);
-    }
-    if(count != 100) {
+    while(count != n) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     } 
-
-    for(auto& client: clients) {
-        client.stop();
-    }
-    clients.clear();
+    client.stop();
+    
     return 0;
 }

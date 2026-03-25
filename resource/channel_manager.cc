@@ -2,6 +2,8 @@
 
 #include "channel_manager.hh"
 #include "channel.hh"
+#include "time.hh"
+#include <cstdint>
 #include <ctime>
 
 namespace kcp{
@@ -14,14 +16,23 @@ channel_manager::channel_manager(std::atomic<bool>& stop)
     ,cuurent_id(std::this_thread::get_id())
 {}
 
-void channel_manager::push_package_callback(void* self,const udp::endpoint& point, const char* data, size_t size){
+std::shared_ptr<channel_manager> channel_manager::create(std::atomic<bool>& stop){
+    std::shared_ptr<channel_manager> ptr = std::make_shared<channel_manager>(std::ref(stop));
+    ptr->init();
+    return ptr;
+}
+void channel_manager::init(){
+    container_.set_manager(shared_from_this());
+}
+
+void channel_manager::push_package_callback(void* self, const udp::endpoint& point, const char* data, size_t size){
     channel_manager* self_ = static_cast<channel_manager*>(self);
     self_->receive_packet(point, data, size);
     return ;
 }
-void channel_manager::push_new_link_callback(void* self, uint32_t conv, const udp::endpoint& peer){
+void channel_manager::push_new_link_callback(void* self, void* socket, uint32_t conv, const udp::endpoint& peer){
     channel_manager* self_ = static_cast<channel_manager*>(self);
-    self_->create_linked(conv, peer);
+    self_->create_linked(socket, conv, peer);
     return ;
 }
 void channel_manager::push_half_link_callback(void* self, uint32_t conv, const udp::endpoint& peer){
@@ -40,13 +51,11 @@ void channel_manager::remove_half_link(uint32_t conv) {
     return ;
 }
 // set the callback function for sending messages in the socket layer to the channel
-void channel_manager::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
-    send_ctx_ = ctx;
+void channel_manager::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t)){
     send_callback_ = callback;
     return ;
 }
-void channel_manager::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
-    send_ctx_ = ctx;
+void channel_manager::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&)){
     async_send_callback_ = callback;
     return ;
 }
@@ -83,31 +92,48 @@ void channel_manager::stop(){
     return ;
 }
 
+void channel_manager::add_event_channel(const std::shared_ptr<channel>& chann){
+    register_event_channel_call();
+    event_channel_.push_back(chann);
+}
+void channel_manager::register_event_channel_call(){
+    if (event_channel_.size()) {
+        return;
+    }
+    context_->post([this](){
+        this->hander_event_channel_update();
+    });
+}
+void channel_manager::hander_event_channel_update(){
+    uint64_t now = util::time::clock_64();
+    for(auto& ptr : event_channel_) {
+        if (ptr->timer_scheduled) {
+            continue;
+        }
+        ptr->conn_.update(now);
+        uint64_t next_time = ptr->check(now);
+        container_.push_channel_timer(next_time, ptr->conn_.get_conv());
+        ptr->timer_scheduled = true;
+    }
+    event_channel_.clear();
+}
+
 // process data and links
 void channel_manager::receive_packet(const udp::endpoint& point, const char* data, size_t size){
     uint32_t conv = context::get_conv_from_packet(data);
     std::shared_ptr<channel> chann = container_.find(conv);
     if (chann.get() == nullptr){
-        auto it = half_channel_.find(conv);
-        if(it == half_channel_.end()) {
-            return ;
-        }
-        if(point == it->second){
-            create_linked(conv, point);
-            remove_half_link(conv);
-            receive_packet(point,data,size);
-        }
         return;
     }
     chann->conn_.input(data, size, point);
     return ;
 }
-void channel_manager::create_linked(uint32_t conv, const udp::endpoint& peer){
+void channel_manager::create_linked(void* socket, uint32_t conv, const udp::endpoint& peer){
     std::shared_ptr<channel> chann = container_.insert(conv, peer, shared_from_this());
     if (async_send_callback_) {
-        chann->set_async_send_callback(async_send_callback_, send_ctx_);
+        chann->set_async_send_callback(async_send_callback_,socket);
     }else if (send_callback_){
-        chann->set_send_callback(send_callback_,send_ctx_);
+        chann->set_send_callback(send_callback_,socket);
     }
     chann->set_message_callback(message_callback_);
     chann->set_connect_callback(connect_callback_);

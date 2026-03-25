@@ -39,11 +39,13 @@ public:
         if (index < buffer_size_min) {
             index = buffer_size_min;
         }
-        queue_ptr& q = queue_map[index];
-        int retry = buffer_get_push_retry;
-        while(retry--) {
-            if(q->try_get(buf)){
-                break;
+        if (index <= buffer_size_max) {
+            queue_ptr& q = queue_map[index];
+            int retry = buffer_get_push_retry;
+            while(retry--) {
+                if(q->try_get(buf)){
+                    break;
+                }
             }
         }
         if (!buf){
@@ -75,12 +77,15 @@ private:
         size_t size = buff->capacity();
         if (size & (size - 1)) {
             delete buff;
+            return ;
         }
         if (size > buffer_size_max || size < buffer_size_min) {
             delete buff;
+            return ;
         }
         if (queue_map.count(size) == 0) {
             delete buff;
+            return ;
         }
         int retry = buffer_get_push_retry;
         while(retry--){

@@ -1,0 +1,144 @@
+{
+    "result": [
+        {
+            "1.settings" : 
+            {
+                "server thread" : 1,
+                "client number(preset)" : 3600,
+                "client number(success)" : 3600,
+                "package size" : 128,
+                "request rate(/s)" : 60,
+                "test time" : 20,
+                "total speed" : 216000
+            },
+            "2.client result" : 
+            {
+                "bps" : 
+                {
+                    "server rx(b/s)" : 27187142,
+                    "server tx(b/s)" : 27187142,
+                    "total(/s)" : 54374284
+                },
+                "loss" : 0,
+                "pps" : 
+                {
+                    "server rx(/s)" : 212399,
+                    "server tx(/s)" : 212399,
+                    "total(/s)" : 424799
+                }
+            }
+        },
+        {
+            "1.settings" : 
+            {
+                "server thread" : 5,
+                "client number(preset)" : 7000,
+                "client number(success)" : 7000,
+                "package size" : 128,
+                "request rate(/s)" : 60,
+                "test time" : 20,
+                "total speed" : 420000
+            },
+            "2.client result" : 
+            {
+                "bps" : 
+                {
+                    "server rx(b/s)" : 44331468,
+                    "server tx(b/s)" : 44331468,
+                    "total(/s)" : 88662937
+                },
+                "loss" : 0,
+                "pps" : 
+                {
+                    "server rx(/s)" : 346339,
+                    "server tx(/s)" : 346339,
+                    "total(/s)" : 692679
+                }
+            }
+        },
+        {
+            "1.settings" : 
+            {
+                "server thread" : 5,
+                "client number(preset)" : 8000,
+                "client number(success)" : 8000,
+                "package size" : 128,
+                "request rate(/s)" : 60,
+                "test time" : 20,
+                "total speed" : 480000
+            },
+            "2.client result" : 
+            {
+                "bps" : 
+                {
+                    "server rx(b/s)" : 55426144,
+                    "server tx(b/s)" : 55426144,
+                    "total(/s)" : 110852288
+                },
+                "loss" : 0,
+                "pps" : 
+                {
+                    "server rx(/s)" : 433016,
+                    "server tx(/s)" : 433016,
+                    "total(/s)" : 866033
+                }
+            }
+        },
+        {
+            "1.settings" : 
+            {
+                "server thread" : 5,
+                "client number(preset)" : 9000,
+                "client number(success)" : 9000,
+                "package size" : 128,
+                "request rate(/s)" : 60,
+                "test time" : 20,
+                "total speed" : 540000
+            },
+            "2.client result" : 
+            {
+                "bps" : 
+                {
+                    "server rx(b/s)" : 50533484,
+                    "server tx(b/s)" : 50533484,
+                    "total(/s)" : 101066969
+                },
+                "loss" : 0,
+                "pps" : 
+                {
+                    "server rx(/s)" : 394792,
+                    "server tx(/s)" : 394792,
+                    "total(/s)" : 789585
+                }
+            }
+        },
+        {
+            "1.settings" : 
+            {
+                "server thread" : 5,
+                "client number(preset)" : 10000,
+                "client number(success)" : 10000,
+                "package size" : 128,
+                "request rate(/s)" : 60,
+                "test time" : 20,
+                "total speed" : 600000
+            },
+            "2.client result" : 
+            {
+                "bps" : 
+                {
+                    "server rx(b/s)" : 44657382,
+                    "server tx(b/s)" : 44657382,
+                    "total(/s)" : 89314764
+                },
+                "loss" : 0,
+                "pps" : 
+                {
+                    "server rx(/s)" : 348885,
+                    "server tx(/s)" : 348885,
+                    "total(/s)" : 697771
+                }
+            }
+        }
+    ]
+}

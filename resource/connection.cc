@@ -1,7 +1,9 @@
 
 
 #include "connection.hh"
+#include "channel.hh"
 #include "common.hh"
+#include "channel_manager.hh"
 
 namespace kcp{
 
@@ -19,6 +21,9 @@ uint32_t connection::get_conv() {
 bool connection::is_alive(uint64_t clock){
     return clock - context_.get_last_time() < connection_timeout;
 }
+void connection::set_channel(const std::shared_ptr<channel>& chann){
+    channel_ = chann;
+}
 
 void connection::update(uint32_t clock){
     context_.update(clock);
@@ -33,11 +38,11 @@ uint64_t connection::check(uint64_t clock){
 }
 
 void connection::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
-    context_.set_send_callback(callback, ctx);
+    context_.set_send_callback(callback,ctx);
     return ;
 }
 void connection::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
-    context_.set_async_send_callback(callback, ctx);
+    context_.set_async_send_callback(callback,ctx);
     return ;
 }
 void connection::set_message_callback(void(* callback)(void*,packet),void* ctx) {
@@ -52,9 +57,11 @@ void connection::set_connect_callback(void(* callback)(void*,bool),void* ctx){
 }
 
 bool connection::send(const char* data, size_t size){
+    channel_.lock()->manager_.lock()->add_event_channel(channel_.lock());
     return context_.send(data, size);
 }
 bool connection::send_packet(const packet& pack){
+    channel_.lock()->manager_.lock()->add_event_channel(channel_.lock());
     return context_.send_packet(pack);
 }
 void connection::keepalive(){

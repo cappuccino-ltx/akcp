@@ -20,14 +20,14 @@ public:
     void set_connection_timeout(uint32_t second = 10);
     void set_buffer_pool(const std::function<packet(size_t)>& back);
 
-    void start(int port);
+    void start(int port, int core_begin = -1, int core_end = -1);
     void stop();
 private:
     void stop_internal();
 
 private:
     // muliti thread
-    std::vector<kcp_thread> threads_;
+    std::vector<std::unique_ptr<kcp_thread>> threads_;
     //  count = 0;
     // control variable
     std::atomic_bool stop_ {false};

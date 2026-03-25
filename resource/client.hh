@@ -11,18 +11,17 @@ namespace kcp{
 
 class client{
 public:
-    client();
+    client(int core = -1);
     void set_connect_callback(const std::function<void(channel_view,bool)>& callback);
     void set_message_callback(const std::function<void(channel_view,packet)>& callback);
-    void connect(const std::string& host,int port);
+    void connect(const std::string& host,int port, bool is_sole_socket = false);
     void stop();
 
     void set_buffer_pool(const std::function<packet(size_t)>& back);
 
 private:
     void stop_internal();
-    static void receive_callback(void* self,const udp::endpoint& point,const char* data,size_t size);
-    void init();
+    void init(int core = -1);
 
 private:
 // control variable

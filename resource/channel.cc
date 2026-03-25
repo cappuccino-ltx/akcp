@@ -90,10 +90,7 @@ channel::channel(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<c
     :conn_(conv, peer)
     ,manager_(manager)
     
-{
-    conn_.set_message_callback(channel::message_callback, this);
-    conn_.set_connect_callback(channel::connect_callback, this);
-}
+{}
 // external call , no need to delete
 void channel::do_timeout(){
     // timeout operator,
@@ -102,12 +99,12 @@ void channel::do_timeout(){
     }
     return ;
 }
-void channel::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t),void* ctx){
-    conn_.set_send_callback(callback, ctx);
+void channel::set_send_callback(void(* callback)(void*, const udp::endpoint&,const char*, size_t), void* socket){
+    conn_.set_send_callback(callback,socket);
     return ;
 }
-void channel::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&),void* ctx){
-    conn_.set_async_send_callback(callback, ctx);
+void channel::set_async_send_callback(void(* callback)(void*, const udp::endpoint&,const packet&), void* socket){
+    conn_.set_async_send_callback(callback,socket);
     return ;
 }
 void channel::set_connect_callback(const std::function<void(channel_view,bool)> & callback){
@@ -165,6 +162,17 @@ void channel::update_callback(void* self, uint32_t clock){
 
 uint64_t channel::check(uint64_t clock){
     return conn_.check(clock);
+}
+
+std::shared_ptr<channel> channel::create(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
+    std::shared_ptr<channel> ptr = std::shared_ptr<channel>(new channel(conv,peer,manager));
+    ptr->init();
+    return ptr;
+}
+void channel::init(){
+    conn_.set_message_callback(channel::message_callback, this);
+    conn_.set_connect_callback(channel::connect_callback, this);
+    conn_.set_channel(shared_from_this());
 }
 
 

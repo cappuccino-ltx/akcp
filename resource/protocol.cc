@@ -6,13 +6,13 @@ namespace kcp{
 std::string protocol::format_connect_response(uint32_t conv){
     std::string ret;
     ret.resize(KCP_PACKAGE_SIZE);
-    sprintf(ret.data(),KCP_CONNECT_RESPONSE,std::to_string(conv).c_str());
+    sprintf((char*)ret.data(),KCP_CONNECT_RESPONSE,std::to_string(conv).c_str());
     return ret;
 }
 std::string protocol::format_connect_response_ack(uint32_t conv){
     std::string ret;
     ret.resize(KCP_PACKAGE_SIZE);
-    sprintf(ret.data(),KCP_CONNECT_RESPONSE_ACK,std::to_string(conv).c_str());
+    sprintf((char*)ret.data(),KCP_CONNECT_RESPONSE_ACK,std::to_string(conv).c_str());
     return ret;
 }
 uint32_t protocol::parse_conv_from_response(const char* data){

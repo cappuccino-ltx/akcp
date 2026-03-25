@@ -1,6 +1,7 @@
 
 
 #include "channel_container.hh"
+#include "channel_manager.hh"
 #include "time.hh"
 
 namespace kcp{
@@ -23,9 +24,10 @@ void channel_container::clear(){
     return ;
 }
 std::shared_ptr<channel> channel_container::insert(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
-    std::shared_ptr<channel> chann(new channel(conv,peer,manager));
+    std::shared_ptr<channel> chann = channel::create(conv, peer, manager);
     channels_[conv] = chann;
-    uint64_t timing = chann->check(util::time::clock_32());
+    uint64_t timing = chann->check(util::time::clock_64());
+    chann->timer_scheduled = true;
     timer_.push(timing, conv);
     return chann;
 }
@@ -48,6 +50,14 @@ void channel_container::stop(){
     timer_.stop();
     return ;
 }
+
+void channel_container::set_manager(const std::shared_ptr<channel_manager>& manager){
+    manager_ = manager;
+}
+void channel_container::push_channel_timer(uint64_t clock, int conv) {
+    timer_.push(clock, conv);
+}
+
 void channel_container::update_callback(void* self, uint32_t conv ,uint64_t clock){
     channel_container* self_ = static_cast<channel_container*>(self);
     std::shared_ptr<channel> chann_ = self_->find(conv);
@@ -56,11 +66,17 @@ void channel_container::update_callback(void* self, uint32_t conv ,uint64_t cloc
         return ;
     }
     if (!chann_->conn_.is_alive(clock)) {
+        chann_->timer_scheduled = false;
         chann_->do_timeout();
         return self_->remove(conv);
     }
-    chann_->conn_.update(clock);
+
     uint64_t timing = chann_->conn_.check(clock);
+    if (timing <= clock) {
+        chann_->timer_scheduled = false;
+        self_->manager_.lock()->add_event_channel(chann_);
+        return;
+    }
     self_->timer_.push_internal(timing, conv);
     return ;
 }
