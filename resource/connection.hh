@@ -1,17 +1,18 @@
 #pragma once 
 #include <cstring>
+#include <memory>
 #include "common.hh"
 #include "context.hh"
 
 namespace kcp{
-
+class channel;
 class connection{
 public:
     explicit connection(uint32_t conv, const udp::endpoint& peer);
 
     uint32_t get_conv();
     bool is_alive(uint64_t clock);
-
+    void set_channel(const std::shared_ptr<channel>& chann);
     void update(uint32_t clock);
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
     uint64_t check(uint64_t clock);
@@ -23,7 +24,7 @@ public:
 
     bool send(const char* data, size_t size);
     bool send_packet(const packet& pack);
-
+    
     void keepalive();
     void disconnect();
     static void set_timeout(uint32_t milliseconds);
@@ -32,6 +33,7 @@ private:
     static void receive_callback(void* ptr, packet pack);
 
 private:
+    std::weak_ptr<channel> channel_;
     context context_;
     void* message_ctx_ { nullptr };
     void* connect_ctx_ { nullptr };

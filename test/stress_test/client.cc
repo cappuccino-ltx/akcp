@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <thread>
 #include <json/json.h>
 #include <fstream>
@@ -17,14 +18,14 @@ int interval = 60;
 std::string message;
 
 // test arg
-std::atomic_bool stop = false;
+std::atomic_bool stop{false};
 int tick_interval = 20; // send message time interval
 
 // result
-std::atomic_int64_t request_count = 0;
-std::atomic_int64_t response_count = 0;
-std::atomic_int64_t packet_loss = 0;
-std::atomic_int connect_count = 0;
+std::atomic_int64_t request_count{ 0};
+std::atomic_int64_t response_count{ 0};
+std::atomic_int64_t packet_loss{ 0};
+std::atomic_int connect_count { 0};
 
 void send_message(kcp::channel_view channel){
     ++request_count;
@@ -63,26 +64,40 @@ void on_message(kcp::channel_view channel, kcp::packet packet){
 void test(){
     std::cout << "test preparation ..." << std::endl;
     // std::list<kcp::client> clients;
-    kcp::client* clients = new kcp::client[client_num];
+    int thread_num = 7;
+    int core_start = 0;
+    int one_thread_client = client_num / thread_num;
+    std::vector<std::shared_ptr<kcp::client>> clients;
+    for (int i = 0; i < thread_num; i++) {
+        clients.push_back(std::make_shared<kcp::client>(core_start + i));
+    }
     tick_interval = 1000 / interval;
     if (interval > 1000) {
         tick_interval = 1;
     }
 
-    for (int i = 0; i < client_num; i++) {
-        clients[i].set_connect_callback(on_connect);
-        clients[i].set_message_callback(on_message);
+    for (int i = 0; i < thread_num; i++) {
+        clients[i]->set_connect_callback(on_connect);
+        clients[i]->set_message_callback(on_message);
     }
     std::cout << "test begin" << std::endl;
-    for (int i = 0; i < client_num; i++) {
-        clients[i].connect(ip, port);
+    for (int i = 0; i < thread_num; i++) {
+        int current_thread_client_n = 0;
+        if (i == thread_num - 1) {
+            current_thread_client_n = client_num - one_thread_client * (thread_num - 1);
+        }else {
+            current_thread_client_n = one_thread_client;
+        }
+        for (int j = 0;j < current_thread_client_n; j++){
+            clients[i]->connect(ip, port,true);
+        }
     }
     auto next = std::chrono::steady_clock::now();
     auto end = next + std::chrono::seconds(times);
     std::this_thread::sleep_until(end);
     stop = true;
-    for (int i = 0; i < client_num; i++) {
-        clients[i].stop();
+    for (int i = 0; i < thread_num; i++) {
+        clients[i]->stop();
     }
     std::cout << "test end" << std::endl;
     // wait disconnection

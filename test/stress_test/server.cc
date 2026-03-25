@@ -31,13 +31,15 @@ int main(int argc , char* args[]) {
         std::cout << "usage : " << args[0] << " port " << std::endl;
         return 1;
     }
+    // 初始化 buffer poll
+    buffer_pool::init_pool<uint8_t>(1000,100,2000);
     int port = std::stoi(args[1]);
     kcp::server server;
     server_global = &server;
     server.set_connect_callback(on_connect);
     server.set_message_callback(on_message);
     server.set_buffer_pool(get_buffer);
-    server.enable_muliti_thread();
-    server.start(port);
+    server.enable_muliti_thread(5);
+    server.start(port,7, 11);
     return 0;    
 }

@@ -4,11 +4,11 @@
 #include <unordered_map>
 #include <memory>
 #include "channel.hh"
-#include "timer.hh"
+#include "kcp_timer.hh"
 
 
 namespace kcp{
-
+class channel_manager;
 class channel_container{
 public:
     // is_sharding is false, discord
@@ -20,6 +20,8 @@ public:
     void remove(uint32_t conv);
     size_t size();
     void stop();
+    void set_manager(const std::shared_ptr<channel_manager>& manager);
+    void push_channel_timer(uint64_t clock, int conv);
     static void remove_callback(void* self, uint32_t conv);
 private:
     static void update_callback(void* self, uint32_t conv ,uint64_t clock);
@@ -27,6 +29,7 @@ private:
 private:
     std::unordered_map<uint32_t,std::shared_ptr<channel>> channels_;
     timer timer_;
+    std::weak_ptr<channel_manager> manager_;
 }; // class connection_container
 
 } // namespace kcp

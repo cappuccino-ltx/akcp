@@ -7,10 +7,14 @@
 #include <iostream>
 #include <thread>
 kcp::server* server_global = nullptr;
-std::atomic_bool threads[3] = {false, false, false};
+std::atomic_bool threads[3]{
+    ATOMIC_VAR_INIT(false),
+    ATOMIC_VAR_INIT(false),
+    ATOMIC_VAR_INIT(false)
+};
 std::thread::id tids[3];
 int count[3];
-std::atomic_int count_total = 100;
+std::atomic_int count_total {100};
 
 void add_connection() {
     for(int i = 0; i < 3; i++) {

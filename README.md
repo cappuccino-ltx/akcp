@@ -12,10 +12,12 @@
 - 基于事件循环的 UDP 收发与回调分发
 - 提供服务端/客户端 API：`kcp::server`、`kcp::client`
 - 内置 demo 与 stress test 工程，便于快速验证
+- 提供了 自定义 buffer pool 的设置接口
+- 内部对 linux 环境下的发送进行了批量发送优化
+- 内部对 linux 环境下的绑核操作进行了支持
 
 ## 目录结构
 
-- `common/`：通用组件与 KCP 源码（`ikcp.c/.h`、协议与时间工具）
 - `resource/`：核心库实现（server/client/channel/context/timer）
 - `test/`：示例与测试（single_demo、multi_thread、stress_test）
 
@@ -24,7 +26,7 @@
 要求：
 
 - CMake >= 3.10
-- C++17 编译器
+- C++11 编译器
 - Boost.Asio（Boost）
 - jsoncpp（仅 `client_stress` 需要）
 
@@ -96,6 +98,71 @@ cmake -S .. -B .
 
 `ip port clients duration_seconds req_per_client_per_sec packet_size`
 
+### 测试数据示例:
+测试环境:
+
+- 机器配置: 12 核心 16 GB 内存
+- 操作系统: ubuntu 22.04 STL
+- 单机测试( 为了忽略带宽的影响 )
+- 客户端和服务端都进行和绑核操作(5 个服务端线程, 6 个客户端线程)
+
+因为经过测试 单个核心跑 1200 个客户端的首发逻辑,cpu 占用就到 95 左右了,
+
+测试命令:
+```bash
+# server
+./server_stress 8080
+#client
+./client_stress 127.0.0.1 8080 7000 20 60 128
+```
+
+参数说明: 
+- 客户端数量: 7000
+- 单个客户端每秒发送 60 次消息
+- 单个消息长度: 128 字节
+- 客户端持续请求 20s
+
+客户端线程 cpu 占用比例: 平均98%
+服务器线程 cpu 占用比例: 平均65%
+
+```json
+{
+    "1.settings" : 
+    {
+        "client number(preset)" : 7000,
+        "client number(success)" : 7000,
+        "package size" : 128,
+        "request rate(/s)" : 60,
+        "test time" : 20,
+        "total speed" : 420000
+    },
+    "2.client result" : 
+    {
+        "bps" : 
+        {
+            "server rx(b/s)" : 52545171,
+            "server tx(b/s)" : 52545171,
+            "total(/s)" : 105090342
+        },
+        "loss" : 0,
+        "pps" : 
+        {
+            "server rx(/s)" : 410509,
+            "server tx(/s)" : 410509,
+            "total(/s)" : 821018
+        }
+    }
+}
+
+```
+
+数据说明:
+
+- 测试服务器中,只对客户端发送的数据进行回显.
+- 其中, 所有的数据均是应用层数据, 未统计 kcp 前置握手和 kcp 的心跳包和 ack 包.
+
+
+
 ## Socket 缓冲区说明
 
 项目已在代码里设置 UDP 收发缓冲区（见 `common/common.hh` 与 `resource/io_socket.cc`）。
@@ -108,4 +175,5 @@ sudo sysctl -w net.core.rmem_max=134217728
 sudo sysctl -w net.core.rmem_default=134217728
 sudo sysctl -w net.core.wmem_max=134217728
 sudo sysctl -w net.core.wmem_default=134217728
+sudo sysctl -w  net.core.netdev_max_backlog=10000
 ```
