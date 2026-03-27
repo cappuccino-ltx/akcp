@@ -31,7 +31,7 @@ using package = std::pair<udp::endpoint, packet>;
 #define CLIENT_SOCKET_SEND_BUFFER_SIZE (200 * 1024)
 
 #define BATCH_IO_BUFFER_SIZE 2048
-#define BATCH_IO_BUFFER_NUM 32
+#define BATCH_IO_BUFFER_NUM 64
 
 // 160 ~ 0xffffffff - 160
 #define KCP_CONV_MIN 0xa0
@@ -43,25 +43,25 @@ using package = std::pair<udp::endpoint, packet>;
 #define KCP_MODE_MODERATE 2
 #define KCP_MODE_FAST 3
 
-#define  KCP_MODE KCP_MODE_MODERATE
+#define  KCP_MODE KCP_MODE_FAST
 #if KCP_MODE == KCP_MODE_DEFAULT
 // kcp default configuration
 #define KCP_NODELAY 0
-#define KCP_INTERVAL 30
+#define KCP_INTERVAL 60
 #define KCP_RESEND 0
 #define KCP_NC 0
 #define KCP_RTT 800
 #elif KCP_MODE == KCP_MODE_MODERATE
 // kcp fast mode reteins congestion control configuration
 #define KCP_NODELAY 1
-#define KCP_INTERVAL 30
+#define KCP_INTERVAL 60
 #define KCP_RESEND 2
 #define KCP_NC 0
 #define KCP_RTT 200
 #elif KCP_MODE == KCP_MODE_FAST
 // kcp extreme fast mode configuration
 #define KCP_NODELAY 1
-#define KCP_INTERVAL 30
+#define KCP_INTERVAL 60
 #define KCP_RESEND 2
 #define KCP_NC 1
 #define KCP_RTT 150

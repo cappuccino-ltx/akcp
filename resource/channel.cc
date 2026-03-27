@@ -160,9 +160,6 @@ void channel::update_callback(void* self, uint32_t clock){
     return ;
 }
 
-uint64_t channel::check(uint64_t clock){
-    return conn_.check(clock);
-}
 
 std::shared_ptr<channel> channel::create(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
     std::shared_ptr<channel> ptr = std::shared_ptr<channel>(new channel(conv,peer,manager));

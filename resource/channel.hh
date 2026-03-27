@@ -38,8 +38,6 @@ private:
     static void update_callback(void* self, uint32_t clock);
     void put_message_queue(const packet& pack);
     void handler_send_message();
-    uint64_t check(uint64_t clock);
-    uint64_t next_update_time();
     static std::shared_ptr<channel> create(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager);
     void init();
 
@@ -52,7 +50,9 @@ private:
     // std::function<void(uint32_t)> remove_channel_callback_;
     void* remove_channel_ctx_ { nullptr };
     void(*remove_channel_callback_)(void*,uint32_t) { nullptr };
-    bool timer_scheduled { false };// write_scheduled
+    bool send_push { false };
+    bool time_push { false };
+    bool queued { false };
 }; // class channel
 
 } // namespace kcp

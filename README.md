@@ -1,4 +1,4 @@
-This project incorporates or references third-party KCP code (ikcp, kcp-csharp). See `THIRD_PARTY_NOTICES` for details.
+This project includes or refers to third-party KCP (ikcp, kcp-csharp) code. See THIRD_PARTY_NOTICES for details.
 
 # akcp
 
@@ -6,33 +6,32 @@ This project incorporates or references third-party KCP code (ikcp, kcp-csharp).
 
 ---
 
-A lightweight wrapper library based on Boost.Asio and KCP. It provides business-oriented `server/client/channel` interfaces, supporting connection management, message transceiving, timeout recovery, and built-in stress test examples.
+A lightweight wrapper library based on **Boost.Asio** and **KCP**. It provides business-oriented `server/client/channel` interfaces, supporting connection management, message transceiving, timeout recycling, and comprehensive benchmarking examples.
 
-C# protocol interfaces are provided for seamless communication between C++ and C# versions.
+The project provides C# protocol interfaces compatible with the C++ version for seamless cross-language communication.
 
 ## Features
 
-- **Encapsulated KCP Lifecycle**: Manages creation, sending/receiving, updating, and releasing of KCP sessions.
-- **Event-Loop Based**: UDP I/O and callback dispatching based on Boost.Asio event loops.
-- **Server/Client APIs**: High-level abstractions via `kcp::server` and `kcp::client`.
-- **Built-in Demos**: Includes single-connection demos and stress test projects for rapid verification.
-- **Customizable Memory**: Provides interfaces for setting custom buffer pools.
-- **Linux Optimizations**: 
-  - Supports batch I/O (sendmmsg/recvmmsg) for high-throughput scenarios.
-  - Supports CPU affinity (core pinning) for minimized context switching.
+- **Lifecycle Management**: Encapsulates KCP session creation, transceiving, updating, and releasing.
+- **Event-Driven**: High-performance UDP I/O and callback distribution based on Boost.Asio.
+- **Easy-to-use API**: Clean interfaces for `kcp::server` and `kcp::client`.
+- **Latency/Throughput Trade-off**: Enabled low-delay mode by default. Provides interfaces to manually disable low-delay mode for higher PPS and BPS.
+- **Buffer Pool**: Supports custom buffer pool settings to minimize memory fragmentation.
+- **Linux Optimizations**: Includes batch sending optimizations and CPU affinity (core pinning) support.
+- **Built-in Benchmarks**: Includes demos and stress testing tools for rapid verification.
 
 ## Directory Structure
 
 - `resource/`: Core library implementation (server, client, channel, context, timer).
 - `test/`: Examples and benchmarks (single_demo, multi_thread, stress_test).
 
-## Installation
+## Build & Installation
 
 Requirements:
 - CMake >= 3.10
-- C++11 Compatible Compiler
-- Boost.Asio (Boost Library)
-- jsoncpp (Required only for `client_stress`)
+- C++17 Compiler
+- Boost.Asio
+- jsoncpp (required only for `client_stress`)
 
 ### Linux
 ```bash
@@ -52,16 +51,12 @@ cmake --install . --config Release
 
 ## Quick Start
 
-Usage after installation:
+After installation, use in your `CMakeLists.txt`:
 ```cmake
-# CMakeLists.txt
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(demo_use_akcp)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 find_package(akcp CONFIG REQUIRED)
 
 add_executable(server main.cc)
@@ -70,7 +65,7 @@ target_link_libraries(server PRIVATE akcp::akcp)
 
 ## Testing
 
-Build:
+### Compilation
 ```bash
 mkdir build; cd build
 cmake -S .. -B .
@@ -86,114 +81,59 @@ make
 ./build/test/single_demo/client
 ```
 
-### Stress Test
-```bash
-# Terminal 1
-./build/test/stress_test/server_stress 8080
+### Benchmark Notes
 
-# Terminal 2
-./build/test/stress_test/client_stress 127.0.0.1 8080 100 30 60 128
-```
+The `test/` directory contains various test cases: [Single Demo](test/single_demo/), [Multi-threaded Server Sharding](test/multi_thread/), [Stress Test](test/stress_test/), [PPS/BPS/P99 Metrics](test/pps_bps_p99/), and [14-Hour Stability Test](test/balance/).
 
-Parameter Meanings:
-`ip port clients duration_seconds req_per_client_per_sec packet_size`
+**Note on Performance**: In PPS and Stability tests, you can disable the low-delay mode on both server and client. This allows KCP to perform packet bundling (aggregation), resulting in significantly higher PPS and BPS. However, the latency will increase to approximately the value of your configured `interval` (KCP internal update clock).
 
 ### Benchmark Results
 
-Testing Environment:
-- **Hardware**: 12 Cores / 16 GB RAM
-- **OS**: Ubuntu 22.04 LTS
-- **Network**: Single-machine local test (to eliminate bandwidth bottlenecks)
+*Results may vary based on hardware and network conditions. All data below are based on local loopback tests to eliminate network bandwidth bottlenecks.*
 
-#### 1. Single-Thread Server Performance
-Both client and server utilize CPU affinity (1 Server thread, 6 Client threads).
+**Environment:**
+- CPU: 12 Cores / RAM: 16 GB
+- OS: Ubuntu 22.04 LTS
+- CPU Affinity: 5 threads for Server, 7 threads for Client.
 
-**Test Command:**
-```bash
-# server
-./server_stress 8080
-# client
-./client_stress 127.0.0.1 8080 3600 20 60 128
-```
-- Clients: 3600
-- Request Rate: 60 msg/s per client
-- Packet Size: 128 Bytes
-- Duration: 20s
+#### 1. Low-Delay Mode Enabled
+Scalability test from 1,000 to 11,000 concurrent clients.
 
-When reaching 3,600 clients, the single server thread CPU usage reached **98%**.
+**BPS & PPS**
 
-**Data:**
-```json
-{
-    "1.settings" : 
-    {
-        "client number(preset)" : 3600,
-        "client number(success)" : 3600,
-        "package size" : 128,
-        "request rate(/s)" : 60,
-        "test time" : 20,
-        "total speed" : 216000
-    },
-    "2.client result" : 
-    {
-        "bps" : 
-        {
-            "server rx(b/s)" : 27187142,
-            "server tx(b/s)" : 27187142,
-            "total(/s)" : 54374284
-        },
-        "loss" : 0,
-        "pps" : 
-        {
-            "server rx(/s)" : 212399,
-            "server tx(/s)" : 212399,
-            "total(/s)" : 424799
-        }
-    }
-}
-```
+![bps&pps](test/result/enable_low_delay/throughput_pps.png)
 
-#### 2. Multi-Thread Server Performance
-Core pinning: 5 Server threads, 7 Client threads.
+**Latency (P50, P99, P999)**
 
-**Test Command:**
-```bash
-# server
-./server_stress 8080
-# client
-./client_stress 127.0.0.1 8080 7000 20 60 128
-```
-Based on testing, the logic for handling ~1,200 clients saturates a single core (~95% CPU).
+![latency](test/result/enable_low_delay/latency.png)
 
-- Clients: 7,000+
-- Request Rate: 60 msg/s per client
-- Packet Size: 128 Bytes
-- Duration: 20s
+#### 2. Low-Delay Mode Disabled (Throughput Optimized)
+Disabling low-delay mode triggers KCP's packet bundling mechanism.
 
-**Performance Metrics:**
-- Client threads CPU usage: Avg 98%
-- Server threads CPU usage: Avg 98%
+**BPS & PPS**
 
-Detailed data can be found in the [Results File](test/result/result.json).
+![bps&pps](test/result/disable_low_delay/throughput_pps.png)
 
-![result](test/result/result.png)
+**Latency (P50, P99, P999)**
 
-**Notes:**
-- The test server only performs an echo of the data sent by clients.
-- All statistics reflect **application-layer data**; KCP handshakes, heartbeats, and ACKs are excluded from these counts.
+![latency](test/result/disable_low_delay/latency.png)
 
-**Summary Table:**
+*Data Note: The server only echoes back the data sent by clients. All statistics represent application-layer data only (KCP overhead and handshakes excluded).*
 
-| Client Count | Throughput (MB/s) | PPS (k/s) |
-|:---------:|:---:|:---:|
-| 7,000 | 105 | 821 |
-| 8,000 | 110 | **866** |
-| 9,000 | 101 | 789 |
-| 10,000 | 89 | 697 |
+#### 3. 14-Hour Stability Test
+The server ran in low-delay mode for 14 hours with the following load:
+- 3,000 persistent connections with continuous requests.
+- 1,000 churn connections (disconnecting and reconnecting every 10 minutes).
 
-## Socket Buffer Tuning
+System resources were monitored via `pidstat`:
 
-The project configures UDP receive/send buffers in the code (see `common/common.hh` and `resource/io_socket.cc`). Under high-load scenarios, it is highly recommended to adjust the OS system limits to prevent burst packet loss.
+![balance](test/result/stress_report.png)
+
+*All benchmark charts are available in `test/result`.*
+
+## Socket Buffer Configuration
+
+The project configures UDP transceiving buffers in code (see `common/common.hh` and `resource/io_socket.cc`). Under high-load scenarios, it is highly recommended to increase the system limits to prevent burst packet loss.
 
 **Linux Example:**
 ```bash

@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include <memory>
 #include "channel.hh"
@@ -10,6 +11,7 @@
 namespace kcp{
 class channel_manager;
 class channel_container{
+    friend class kcp_thread;
 public:
     // is_sharding is false, discord
     // is_sharding is ture , n > 0,
@@ -28,6 +30,7 @@ private:
     
 private:
     std::unordered_map<uint32_t,std::shared_ptr<channel>> channels_;
+    std::function<void(void*)> remove_channel_socket_callback_;
     timer timer_;
     std::weak_ptr<channel_manager> manager_;
 }; // class connection_container

@@ -64,6 +64,8 @@ void io_socket::async_receive(){
     socket_.async_wait(udp::socket::wait_read,[this](boost::system::error_code ec){
         if (!ec) {
             do_batch_read();
+        }else {
+            return ;
         }
         async_receive();
     });
@@ -132,6 +134,8 @@ void io_socket::async_send_message_callback(void* self, const udp::endpoint& rem
 void io_socket::handle_receive(const boost::system::error_code& error, std::size_t size){
     if (!error && receive_callback){
         receive_callback(receive_ctx,this,remote_endpoint_,(char*)buffer_.data(),size);
+    }else if (error){
+        return;
     }
     async_receive();
     return ;

@@ -7,6 +7,7 @@
 namespace kcp{
 class channel;
 class connection{
+    friend class channel_container;
 public:
     explicit connection(uint32_t conv, const udp::endpoint& peer);
 
@@ -14,6 +15,7 @@ public:
     bool is_alive(uint64_t clock);
     void set_channel(const std::shared_ptr<channel>& chann);
     void update(uint32_t clock);
+    void flush();
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
     uint64_t check(uint64_t clock);
 
@@ -24,10 +26,12 @@ public:
 
     bool send(const char* data, size_t size);
     bool send_packet(const packet& pack);
+    void push_task(bool read_opt, bool write_opt);
     
     void keepalive();
     void disconnect();
     static void set_timeout(uint32_t milliseconds);
+    static void disable_low_latency();
 
 private:
     static void receive_callback(void* ptr, packet pack);
@@ -40,6 +44,7 @@ private:
     void(* message_callback_)(void*,packet) { nullptr };
     void(* connect_callback_)(void*,bool) { nullptr };
     static uint32_t connection_timeout;
+    static bool is_low_delay;
 }; // class connection
 
 } // namespace kcp

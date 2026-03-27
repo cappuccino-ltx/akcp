@@ -15,8 +15,11 @@ public:
 
     void set_connect_callback(const std::function<void(channel_view,bool)>& callback);
     void set_message_callback(const std::function<void(channel_view,packet)>& callback);
-
+    void set_thread_quit_callback(const std::function<void()>& back);
+    void set_thread_start_callback(const std::function<void()>& back);
+    
     void enable_muliti_thread(int n = std::thread::hardware_concurrency());
+    void disable_low_latency(int heartbeat_time = KCP_INTERVAL);
     void set_connection_timeout(uint32_t second = 10);
     void set_buffer_pool(const std::function<packet(size_t)>& back);
 

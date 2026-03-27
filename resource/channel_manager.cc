@@ -93,7 +93,11 @@ void channel_manager::stop(){
 }
 
 void channel_manager::add_event_channel(const std::shared_ptr<channel>& chann){
+    if (chann->queued) {
+        return;
+    }
     register_event_channel_call();
+    chann->queued = true;
     event_channel_.push_back(chann);
 }
 void channel_manager::register_event_channel_call(){
@@ -107,13 +111,19 @@ void channel_manager::register_event_channel_call(){
 void channel_manager::hander_event_channel_update(){
     uint64_t now = util::time::clock_64();
     for(auto& ptr : event_channel_) {
-        if (ptr->timer_scheduled) {
-            continue;
-        }
         ptr->conn_.update(now);
-        uint64_t next_time = ptr->check(now);
-        container_.push_channel_timer(next_time, ptr->conn_.get_conv());
-        ptr->timer_scheduled = true;
+        if (ptr->send_push) {
+            // send ...
+            ptr->conn_.flush();
+            ptr->send_push = false;
+        }
+        if (ptr->time_push) {
+            // timer ...
+            uint64_t next_time = ptr->conn_.check(now);
+            container_.push_channel_timer(next_time, ptr->conn_.get_conv());
+            ptr->time_push = false;
+        }
+        ptr->queued = false;
     }
     event_channel_.clear();
 }

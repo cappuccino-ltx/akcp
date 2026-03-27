@@ -7,6 +7,8 @@
 #include <cstdint>
 namespace kcp{
 
+int context::interval = KCP_INTERVAL;
+
 std::atomic_uint32_t context::conv_global{KCP_CONV_MIN};
 
 context::context(unsigned int conv, const udp::endpoint& peer)
@@ -16,7 +18,7 @@ context::context(unsigned int conv, const udp::endpoint& peer)
 {
     kcp_ = ikcp_create(conv_, this);
     kcp_->output = context::send_callback;
-    ikcp_nodelay(kcp_, KCP_NODELAY, KCP_INTERVAL, KCP_RESEND, KCP_NC);
+    ikcp_nodelay(kcp_, KCP_NODELAY, context::interval, KCP_RESEND, KCP_NC);
 }
 context::~context(){
     ikcp_release(kcp_);
@@ -55,6 +57,9 @@ void context::set_receive_callback(void(* callback)(void*,packet),void* ctx){
 void context::update(uint64_t clock){
     ikcp_update(kcp_, clock);
     return ;
+}
+void context::flush(){
+    ikcp_flush(kcp_);
 }
 
 void context::input(const char* data, size_t bytes, const udp::endpoint& peer){
@@ -116,6 +121,9 @@ uint32_t context::generate_conv_global() {
         }
     }
     return 0;
+}
+void context::set_interval(int val) {
+    interval = val;
 }
 
 uint32_t context::get_conv_from_packet(const char* data){
