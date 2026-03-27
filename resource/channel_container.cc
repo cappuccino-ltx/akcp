@@ -26,18 +26,24 @@ void channel_container::clear(){
 std::shared_ptr<channel> channel_container::insert(uint32_t conv, const udp::endpoint& peer, const std::weak_ptr<channel_manager>& manager){
     std::shared_ptr<channel> chann = channel::create(conv, peer, manager);
     channels_[conv] = chann;
-    uint64_t timing = chann->check(util::time::clock_64());
-    chann->timer_scheduled = true;
+    uint64_t timing = chann->conn_.check(util::time::clock_64());
     timer_.push(timing, conv);
     return chann;
 }
 void channel_container::remove(uint32_t conv){
+    auto chann = find(conv);
+    if (!chann) {
+        return;
+    }
+    if (remove_channel_socket_callback_){
+        remove_channel_socket_callback_(chann->conn_.context_.send_ctx_);
+    }
     channels_.erase(conv);
     return ;
 }
 void channel_container::remove_callback(void* self, uint32_t conv){
     channel_container* self_ = static_cast<channel_container*>(self);
-    self_->channels_.erase(conv);
+    self_->remove(conv);
     return ;
 }
 
@@ -66,14 +72,13 @@ void channel_container::update_callback(void* self, uint32_t conv ,uint64_t cloc
         return ;
     }
     if (!chann_->conn_.is_alive(clock)) {
-        chann_->timer_scheduled = false;
         chann_->do_timeout();
         return self_->remove(conv);
     }
 
     uint64_t timing = chann_->conn_.check(clock);
     if (timing <= clock) {
-        chann_->timer_scheduled = false;
+        chann_->time_push = true;
         self_->manager_.lock()->add_event_channel(chann_);
         return;
     }

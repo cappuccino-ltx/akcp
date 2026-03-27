@@ -2,6 +2,7 @@
 
 #include "common.hh"
 #include "io_socket.hh"
+#include <map>
 
 namespace kcp{
 
@@ -14,13 +15,15 @@ public:
     void start();
     void* get_default_sokcet();
     void* create_new_client_socket(std::atomic_bool& stop);
+    void remove_client_socket(void* socket);
     void set_receive_callback(void(* callback)(void*,void*,const udp::endpoint&,const char*,size_t), void* ctx);
     static void send_message_internal(void* socket, const udp::endpoint& remote_endpoint,void* data, size_t size);
     
 
 private:
     std::shared_ptr<asio::io_context> context_;
-    std::vector<std::shared_ptr<io_socket>> sockets_;
+    std::shared_ptr<io_socket> socket_;
+    std::map<io_socket*, std::shared_ptr<io_socket>> sockets_;
 }; //  class io_loop
 
 } // namespace kcp

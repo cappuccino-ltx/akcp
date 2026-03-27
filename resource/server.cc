@@ -32,8 +32,23 @@ void server::enable_muliti_thread(int n){
 #endif
     return ;
 }
+void server::disable_low_latency(int heartbeat_time){
+    connection::disable_low_latency();
+    context::set_interval(heartbeat_time);
+}
 void server::set_connection_timeout(uint32_t second){
     connection::set_timeout(second * 1000);
+}
+
+void server::set_thread_quit_callback(const std::function<void()>& back){
+    for (int i = threads_.size(); i >= 0; i--) {
+        threads_[i]->set_thread_quit_callback(back);
+    }
+}
+void server::set_thread_start_callback(const std::function<void()>& back){
+    for (int i = threads_.size(); i >= 0; i--) {
+        threads_[i]->set_thread_start_callback(back);
+    }
 }
 
 void server::start(int port, int core_begin, int core_end){

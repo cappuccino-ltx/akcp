@@ -3,11 +3,13 @@
 #include "connection.hh"
 #include "channel.hh"
 #include "common.hh"
+#include "time.hh"
 #include "channel_manager.hh"
 
 namespace kcp{
 
 uint32_t connection::connection_timeout = CONNECTION_TIMEOUT;
+bool connection::is_low_delay = true;
 
 connection::connection(uint32_t conv, const udp::endpoint& peer)
     :context_(conv, peer)
@@ -29,8 +31,13 @@ void connection::update(uint32_t clock){
     context_.update(clock);
     return ;
 }
+void connection::flush() {
+    context_.flush();
+    return ;
+}
 void connection::input(const char* data, size_t bytes, const udp::endpoint& peer){
     context_.input(data, bytes, peer);
+    push_task(true, false);
     return ;
 }
 uint64_t connection::check(uint64_t clock){
@@ -55,13 +62,28 @@ void connection::set_connect_callback(void(* callback)(void*,bool),void* ctx){
     connect_callback_ = callback;
     return ;
 }
-
+void connection::push_task(bool read_opt, bool write_opt) {
+    if(connection::is_low_delay == false) {
+        return ;
+    }
+    if (read_opt){
+        uint64_t now = util::time::clock_64();
+        if (check(now) <= now){
+            write_opt = true;
+        }else {
+            return;
+        }
+    }
+    auto chann = channel_.lock();
+    chann->send_push |= write_opt;
+    chann->manager_.lock()->add_event_channel(chann);
+}
 bool connection::send(const char* data, size_t size){
-    channel_.lock()->manager_.lock()->add_event_channel(channel_.lock());
+    push_task(false, true);
     return context_.send(data, size);
 }
 bool connection::send_packet(const packet& pack){
-    channel_.lock()->manager_.lock()->add_event_channel(channel_.lock());
+    push_task(false, true);
     return context_.send_packet(pack);
 }
 void connection::keepalive(){
@@ -75,6 +97,9 @@ void connection::disconnect(){
 void connection::set_timeout(uint32_t milliseconds){
     connection_timeout = milliseconds;
     return ;
+}
+void connection::disable_low_latency(){
+    is_low_delay = false;
 }
 
 void connection::receive_callback(void* self, packet pack){

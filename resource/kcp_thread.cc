@@ -42,6 +42,13 @@ void kcp_thread::set_message_callback(const std::function<void(channel_view,pack
     }
     return ;
 }
+
+void kcp_thread::set_thread_quit_callback(const std::function<void()>& back) {
+    thread_quit_callback_ = back;
+}
+void kcp_thread::set_thread_start_callback(const std::function<void()>& back) {
+    thread_start_callback_ = back;
+}
 void kcp_thread::start(int port, int core){
     std::promise<bool> is_start;
     auto future = is_start.get_future();
@@ -56,6 +63,8 @@ void kcp_thread::start(int port, int core){
     
     if (port < 0) {
         loop_ = std::make_shared<io_loop>(manager_->context_, std::ref(stop_));
+        // remove 
+        manager_->container_.remove_channel_socket_callback_ = std::bind(&io_loop::remove_client_socket,loop_.get(),kcp::_1);
     }else {
         loop_ = std::make_shared<io_loop>(manager_->context_, std::ref(stop_), port);
     }
@@ -71,6 +80,7 @@ void kcp_thread::start(int port, int core){
     manager_->set_connect_callback(connect_callback_);
     // message
     manager_->set_message_callback(message_callback_);
+    
     loop_->start();
     return ;
 }
@@ -152,12 +162,21 @@ void kcp_thread::receive_callback(void* self, void* socket, const udp::endpoint&
 void kcp_thread::handler(std::promise<bool>& start, std::promise<bool>& end, int core){
     manager_ = channel_manager::create(std::ref(stop_));
     start.set_value(true);
+    if(thread_start_callback_){
+        thread_start_callback_();
+    }
 #if defined(__linux__)
+    while(thread_.get() == nullptr){
+        std::this_thread::yield();
+    }
     if (core >= 0) {
         bind_to_core(core);
     }
 #endif
     manager_->context_->run();
+    if (thread_quit_callback_){
+        thread_quit_callback_();
+    }
     end.set_value(true);
     return ;
 }

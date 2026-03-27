@@ -9,6 +9,7 @@
 namespace kcp{
 
 class context{
+    friend class channel_container;
 public:
     explicit context(uint32_t conv, const udp::endpoint& peer);
     ~context();
@@ -22,6 +23,7 @@ public:
     void set_receive_callback(void(* callback)(void*,packet),void* ctx);
 
     void update(uint64_t clock);
+    void flush();
     void input(const char* data, size_t bytes, const udp::endpoint& peer);
     bool send(const char* data, size_t size);
     bool send_packet(const packet& pack);
@@ -29,6 +31,7 @@ public:
     uint64_t next_update_time();
     static uint32_t get_conv_from_packet(const char* data);
     static uint32_t generate_conv_global();
+    static void set_interval(int val);
 
 private:
     static int send_callback(const char *buf, int len, ikcpcb *kcp, void *user);
@@ -44,6 +47,7 @@ private:
     void(* receive_callback_)(void*,packet) { nullptr };
     uint64_t last_packet_recv_time_ {0};
     static std::atomic_uint32_t conv_global;
+    static int interval;
     
 }; // class connection
 

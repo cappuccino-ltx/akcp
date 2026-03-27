@@ -13,6 +13,7 @@ public:
     friend class kcp_thread;
     friend class server;
     friend class client;
+    friend class channel_container;
 public:
     channel_manager(std::atomic<bool>& stop);
     static std::shared_ptr<channel_manager> create(std::atomic<bool>& stop);
@@ -60,7 +61,6 @@ private:
     channel_container container_;
     // timer tasks
     timer_tasks tasks_;
-    
 }; // class connection_manager
 
 } //namespace kcp

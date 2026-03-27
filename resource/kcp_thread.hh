@@ -19,6 +19,8 @@ public:
     void stop();
     void set_connect_callback(const std::function<void(channel_view,bool)>& callback);
     void set_message_callback(const std::function<void(channel_view,packet)>& callback);
+    void set_thread_quit_callback(const std::function<void()>& back);
+    void set_thread_start_callback(const std::function<void()>& back);
     void start(int port = -1, int core = -1);
     void connect(const std::string& ip, int port, bool is_sole_socket);
     void close_wait();
@@ -49,6 +51,8 @@ private:
     // callback function 
     std::function<void(channel_view,bool)> connect_callback_;
     std::function<void(channel_view,packet)> message_callback_;
+    std::function<void()> thread_start_callback_;
+    std::function<void()> thread_quit_callback_;
     // thread 
     std::shared_ptr<std::thread> thread_;
     std::promise<bool> wait_end;
