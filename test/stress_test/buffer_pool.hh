@@ -25,10 +25,10 @@ private:
         buffer_size_min = begin;
         buffer_size_max = end;
         for (size_t i = begin; i <= end; i <<= 1){
-            queue_map.insert({i,std::make_unique<queue>(
+            queue_map.insert({i,std::unique_ptr<queue>(new queue(
                 std::thread::hardware_concurrency(),
                 lockfree::util::get_proper_size(queue_size)
-            )});
+            ))});
         }
     }
 public:
